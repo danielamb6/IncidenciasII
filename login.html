@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio de Sesión</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-blue: #1a2980;
+            --secondary-blue: #26d0ce;
+            --accent-color: #AB096A;
+            --white: #ffffff;
+            --danger: #e74c3c;
+            --text-secondary: #666666;
+        }
+        
+        * { box-sizing: border-box; font-family: 'Arial', Helvetica, sans-serif; margin: 0; padding: 0; }
+
+        body {
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--secondary-blue) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        body::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(171, 9, 106, 0.15) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(38, 208, 206, 0.15) 0%, transparent 50%);
+            z-index: -1;
+        }
+
+        .login-card {
+            background: var(--white);
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 35px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            text-align: center;
+            position: relative;
+            border: 1px solid rgba(171, 9, 106, 0.2);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .login-card::before {
+            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px;
+            background: linear-gradient(to right, var(--primary-blue), var(--accent-color));
+        }
+
+        .logo-container { text-align: center; margin-bottom: 30px; }
+        .logo-container img { max-width: 100%; height: auto; max-height: 100px; object-fit: contain; }
+
+        .login-header h2 { color: var(--primary-blue); font-size: 1.8rem; margin-bottom: 8px; }
+        .login-header p { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 20px; }
+
+        .error {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--danger);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+            border-left: 4px solid var(--danger);
+        }
+
+        .form-group { margin-bottom: 20px; text-align: left; position: relative; }
+        .form-group label { font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 8px; }
+        
+        .input-with-icon { position: relative; }
+        .input-with-icon i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--accent-color); }
+        
+        .form-group input {
+            width: 100%; padding: 12px 12px 12px 40px; border-radius: 8px;
+            border: 1px solid rgba(171, 9, 106, 0.3); font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(171, 9, 106, 0.1);
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-top: -15px;
+            margin-bottom: 25px;
+        }
+
+        .forgot-password a {
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: var(--accent-color);
+            text-decoration: underline;
+        }
+
+        .btn-login {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, var(--accent-color) 0%, #8A0755 100%);
+            border: none; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: transform 0.2s ease, filter 0.3s ease;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <div class="logo-container">
+            <img src="Sistema de incidencias.png" alt="Logo" onerror="this.onerror=null; this.innerHTML='<i class=\'fas fa-tools\' style=\'font-size: 3rem; color: var(--primary-blue);\'></i>'">
+        </div>
+
+        <div class="login-header">
+            <p>Inicia sesión para continuar</p>
+        </div>
+
+        <div class="error" id="error-msg"></div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label>Usuario o Correo</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-user"></i>
+                    <!-- CORREGIDO: Cambié el id de 'identificador' a 'username' -->
+                    <input type="text" id="username" placeholder="Ingrese su usuario" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Contraseña</label>
+                <div class="input-with-icon">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" placeholder="Ingrese su contraseña" required>
+                </div>
+            </div>
+
+            <div class="forgot-password">
+                <a href="Recuperación de contraseña.html">
+                    <i class="fas fa-question-circle"></i> ¿Olvidaste tu contraseña?
+                </a>
+            </div>
+
+            <button type="submit" class="btn-login">
+                <i class="fas fa-sign-in-alt"></i> Ingresar
+            </button>
+        </form>
+    </div>
+
+    <script>
+        // CORREGIDO: La función ahora usa el id correcto 'username'
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            // Obtener valores del formulario (ahora usa 'username' en lugar de 'identificador')
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // Validar que no estén vacíos
+            if (!username || !password) {
+                const errorMsg = document.getElementById('error-msg');
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = 'Por favor ingrese usuario y contraseña';
+                return;
+            }
+            
+            try {
+                console.log('Intentando login con:', { username, password });
+                
+                const response = await fetch('http://localhost:5000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const result = await response.json();
+                console.log('Login response:', result);
+                
+                if (response.ok && result.status === 'success') {
+                    // Guardar sesión completa
+                    localStorage.setItem('sesion', JSON.stringify(result.data));
+                    
+                    // Guardar datos individuales para fácil acceso
+                    localStorage.setItem('user_rol', result.data.rol);
+                    localStorage.setItem('user_empresa', result.data.id_empresa || '');
+                    localStorage.setItem('user_nombre', result.data.nombre);
+                    localStorage.setItem('user_id', result.data.id);
+                    
+                    // Mostrar mensaje de bienvenida
+                    alert(`¡Bienvenido ${result.data.nombre}! (${result.data.rol})`);
+                    
+                    // Redirigir según el rol
+                    if (result.data.rol === 'supervisor') {
+                        window.location.href = 'index.html?mode=viewonly';
+                    } else if (result.data.rol === 'emp_admin') {
+                        window.location.href = 'index.html?empresa=' + result.data.id_empresa;
+                    } else {
+                        window.location.href = 'index.html';
+                    }
+                } else {
+                    // Mostrar error en el mensaje de error
+                    const errorMsg = document.getElementById('error-msg');
+                    errorMsg.style.display = 'block';
+                    errorMsg.textContent = result.error || 'Error al iniciar sesión';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const errorMsg = document.getElementById('error-msg');
+                errorMsg.style.display = 'block';
+                errorMsg.textContent = 'Error de conexión con el servidor';
+            }
+        }
+
+        // Verificar sesión al cargar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            const sesion = localStorage.getItem('sesion');
+            if (sesion) {
+                // Si ya hay sesión, redirigir al dashboard
+                window.location.href = 'index.html';
+            }
+            
+            // Agregar event listener al formulario
+            const form = document.getElementById('login-form');
+            if (form) {
+                form.addEventListener('submit', handleLogin);
+            }
+        });
+
+        // Opcional: Ocultar mensaje de error cuando el usuario empieza a escribir
+        document.getElementById('username')?.addEventListener('input', function() {
+            document.getElementById('error-msg').style.display = 'none';
+        });
+        
+        document.getElementById('password')?.addEventListener('input', function() {
+            document.getElementById('error-msg').style.display = 'none';
+        });
+    </script>
+</body>
+</html>

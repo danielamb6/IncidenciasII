@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte de Tickets - INSITRA</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    
+    <style>
+        .report-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Estilos para las tarjetas de KPIs (solo web) */
+        .data-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .summary-card {
+            background: #ffffff !important;
+            border-radius: 12px !important;
+            padding: 20px !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05) !important;
+            border: 1px solid rgba(27, 43, 75, 0.1) !important;
+            text-align: center !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .summary-card i { color: var(--accent-color, #AB096A) !important; font-size: 2.2rem !important; margin-bottom: 12px; }
+        .summary-card h3 { color: var(--primary-blue, #1B2B4B) !important; font-size: 1.8rem !important; font-weight: 800 !important; margin: 5px 0 !important; }
+        .summary-card p { color: #475569 !important; font-size: 0.9rem !important; font-weight: 600 !important; text-transform: uppercase; margin: 0 !important; }
+
+        /* Estilos para badges */
+        .folio-badge {
+            background: #EEF2F9; color: #1B2B4B; padding: 5px 12px; border-radius: 6px;
+            font-weight: 700; font-size: 0.85rem; display: inline-block; border: 1px solid #C8D4E8;
+        }
+        .estado-badge {
+            padding: 5px 12px; border-radius: 20px; font-weight: 700; font-size: 0.75rem;
+            display: inline-block; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .estado-pendiente { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .estado-proceso { background: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+        .estado-resuelto { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .estado-cerrado { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+        /* Estilos de la tabla */
+        .table-preview {
+            background: #ffffff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border: 1px solid #d1d5db; padding: 20px; margin-top: 30px; page-break-inside: avoid;
+        }
+        .table-preview h2 {
+            color: #1B2B4B; font-size: 1.3rem; margin-bottom: 20px; border-bottom: 2px solid #AB096A;
+            padding-bottom: 10px; display: inline-block;
+        }
+        .table-preview table {
+            width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden;
+        }
+        .table-preview th {
+            background-color: #1B2B4B !important; color: white !important; padding: 14px 15px;
+            text-align: left; font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px;
+            border-right: 1px solid #2d3e5f; 
+        }
+        .table-preview th:last-child { border-right: none; }
+        .table-preview td {
+            padding: 14px 15px; border-bottom: 1px solid #cbd5e1; color: #1e293b; vertical-align: middle;
+            font-size: 0.9rem; border-right: 1px solid #e2e8f0;
+        }
+        .table-preview td:last-child { border-right: none; }
+        .table-preview tbody tr:last-child td { border-bottom: none; }
+        .table-preview tbody tr:nth-child(even) { background-color: #f8fafc; }
+        .table-preview tbody tr:hover { background-color: #f1f5f9; }
+
+        .text-xs { font-size: 0.8rem; color: #334155; }
+        .falla-text { color: #AB096A; font-weight: 700; display: block; }
+        .solucion-text { color: #1e293b; font-weight: 500; display: block; margin-top: 4px; line-height: 1.4; }
+
+        /* ========== ESTILOS PARA IMPRESIÓN PDF (ALTO CONTRASTE) ========== */
+        .pdf-version,
+        .pdf-version h1, .pdf-version h2, .pdf-version h3, .pdf-version p, 
+        .pdf-version span, .pdf-version td, .pdf-version th, .pdf-version i,
+        .pdf-version strong, .pdf-version b, .pdf-version div {
+            color: #000000 !important; 
+        }
+        .pdf-version .table-preview th {
+            background: #e2e8f0 !important; border-bottom: 2px solid #000000 !important; font-weight: bold !important;
+        }
+        .pdf-version .table-preview td { border-bottom: 1px solid #000000 !important; }
+        
+        /* NUEVO: Evita que las filas se corten entre páginas */
+        .pdf-version tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .pdf-version .estado-badge, .pdf-version .folio-badge {
+            background: #ffffff !important; border: 1.5px solid #000000 !important; font-weight: bold !important;
+        }
+        .pdf-version .summary-card, .pdf-version .table-preview {
+            border: 1px solid #000000 !important; box-shadow: none !important; background: #ffffff !important;
+        }
+        .pdf-version #pdf-header { border-bottom: 4px solid #000000 !important; }
+
+        /* NUEVO: Limpieza total de efectos visuales para forzar nitidez */
+        .pdf-version, .pdf-version * {
+            text-shadow: none !important;
+            box-shadow: none !important;
+            filter: none !important;
+            opacity: 1 !important;
+            -webkit-font-smoothing: antialiased !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo-container">
+            <div class="logo-placeholder" id="logo-placeholder"><i class="fas fa-tools"></i></div>
+            <img src="logo sin fondo.png" alt="Logo INSITRA" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
+            <div class="logo-text">
+                <h1>INSITRA</h1>
+                <div class="subtitle">Sistema de Gestión de Incidencias</div>
+            </div>
+        </div>
+
+        <div class="top-user-info">
+            <div class="user-details">
+                <span class="user-name" id="display-user-name">Cargando...</span>
+                <small class="user-role" id="display-user-role">...</small>
+            </div>
+            <button id="btn-logout" class="btn" style="background: var(--accent-color); margin-left: 15px;"><i class="fas fa-power-off"></i> Salir</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo-sidebar">
+                <h2>Admin<span>Incidencias</span></h2>
+                <p>Sistema de Gestión</p>
+            </div>
+            <ul class="menu">
+                <li class="menu-item" id="menu-dashboard"><a href="index.html" class="menu-link"><i class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
+                <li class="menu-item" id="menu-crearticket"><a href="crear-ticket.html" class="menu-link"><i class="fas fa-plus-circle"></i><span>Crear Ticket</span></a></li>
+                <li class="menu-item" id="menu-registro"><a href="Registro_usuario.html" class="menu-link"><i class="fas fa-user-plus"></i><span>Registro Usuarios</span></a></li>
+                <li class="menu-item" id="menu-incidencias"><a href="incidencias.html" class="menu-link"><i class="fas fa-exclamation-circle"></i><span>Incidencias</span></a></li>
+                <li class="menu-item" id="menu-reportes"><a href="reportes.html" class="menu-link active"><i class="fas fa-chart-bar"></i><span>Reportes</span></a></li>
+                <li class="menu-item" id="menu-clientes"><a href="clientes.html" class="menu-link"><i class="fas fa-user-tie"></i><span>Clientes</span></a></li>
+                <li class="menu-item" id="menu-tecnicos"><a href="tecnicos.html" class="menu-link"><i class="fas fa-users-cog"></i><span>Técnicos</span></a></li>
+                <li class="menu-item" id="menu-catalogos"><a href="catalogos.html" class="menu-link"><i class="fas fa-book"></i><span>Catálogos</span></a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div class="report-container">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h1 class="page-title"><i class="fas fa-file-contract"></i> Reporte Ejecutivo de Tickets</h1>
+                    <button class="btn btn-pdf" id="downloadPDF" style="padding: 10px 20px; font-size: 1rem; border-radius: 8px;">
+                        <i class="fas fa-file-pdf"></i> Descargar Documento
+                    </button>
+                </div>
+
+                <section class="filters" id="filtersSection">
+                    <h2><i class="fas fa-filter"></i> Parámetros del Reporte</h2>
+                    <div class="filter-grid">
+                        <div class="filter-group">
+                            <label><i class="fas fa-calendar-alt"></i> Fecha Inicio</label>
+                            <input type="date" id="fechaInicio" class="filter-control">
+                        </div>
+                        <div class="filter-group">
+                            <label><i class="fas fa-calendar-alt"></i> Fecha Fin</label>
+                            <input type="date" id="fechaFin" class="filter-control">
+                        </div>
+                        <div class="filter-group" id="filtro-empresa-container">
+                            <label><i class="fas fa-building"></i> Empresa</label>
+                            <select id="empresa" class="filter-control">
+                                <option value="">Todas las empresas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button id="aplicarFiltros" class="btn btn-primary"><i class="fas fa-search"></i> Generar</button>
+                        <button id="limpiarFiltros" class="btn btn-secondary"><i class="fas fa-undo"></i> Limpiar</button>
+                    </div>
+                </section>
+
+                <div id="pdf-content">
+                    
+                    <div id="pdf-header" style="display: none; align-items: center; padding-bottom: 0.2in; margin-bottom: 0.2in;">
+                        <img id="pdf-logo-img" src="" alt="INSITRA" style="height: 0.8in; margin-right: 0.2in;">
+                        <div>
+                            <h1 style="color: #1B2B4B; margin:0; font-size: 24pt;">Documento Ejecutivo de Incidencias</h1>
+                            <p id="pdf-date" style="margin:0; color: #AB096A; font-weight: bold;"></p>
+                        </div>
+                    </div>
+
+                    <div class="data-summary" id="metricas">
+                        <div class="summary-card"><i class="fas fa-ticket-alt"></i><h3 id="totalTickets">0</h3><p>Total Emitidos</p></div>
+                        <div class="summary-card"><i class="fas fa-spinner"></i><h3 id="abiertos">0</h3><p>En Proceso</p></div>
+                        <div class="summary-card"><i class="fas fa-check-circle"></i><h3 id="resueltos">0</h3><p>Solucionados</p></div>
+                    </div>
+
+                    <section class="table-preview">
+                        <h2><i class="fas fa-clipboard-list"></i> Detalle de Registros</h2>
+                         <table>
+                            <thead>
+                                 <tr>
+                                    <th style="width: 12%;">Código</th>
+                                    <th style="width: 20%;">Empresa / Unidad</th>
+                                    <th style="width: 22%;">Falla Reportada</th>
+                                    <th style="width: 23%;">Solución Aplicada</th>
+                                    <th style="width: 11%;">Estado</th>
+                                    <th style="width: 12%;">Fecha</th>
+                                 </tr>
+                            </thead>
+                            <tbody id="tablaBody">
+                                 <tr><td colspan="6" style="text-align: center; padding: 20px;">Cargando...</td></tr>
+                            </tbody>
+                         </table>
+                    </section>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000';
+        let isSupervisor = false;
+
+        function logout() { localStorage.clear(); window.location.href = "login.html"; }
+
+        function getAuthHeaders() {
+            const headers = { 'Content-Type': 'application/json' };
+            const userRol = localStorage.getItem('user_rol');
+            const userEmpresa = localStorage.getItem('user_empresa');
+            if (userRol) headers['X-User-Rol'] = userRol;
+            if (userEmpresa) headers['X-User-Empresa'] = userEmpresa;
+            return headers;
+        }
+
+        function mostrarInfoUsuario() {
+            const nombre = localStorage.getItem('user_nombre') || 'Usuario Demo';
+            const rol = localStorage.getItem('user_rol') || 'admin';
+            document.getElementById('display-user-name').textContent = nombre;
+            document.getElementById('display-user-role').textContent = rol;
+            if (rol === 'supervisor') isSupervisor = true;
+        }
+
+        function ajustarMenuPorRol() {
+            const rol = localStorage.getItem('user_rol');
+            if (rol === 'emp_admin') {
+                const ocultar = ['menu-crearticket', 'menu-registro', 'menu-clientes', 'menu-tecnicos', 'menu-catalogos'];
+                ocultar.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+                
+                const filtroEmpresa = document.getElementById('filtro-empresa-container');
+                if(filtroEmpresa) filtroEmpresa.style.display = 'none';
+            }
+        }
+
+        function obtenerNombreEmpresaUsuario() {
+            const selectEmpresa = document.getElementById('empresa');
+            if (selectEmpresa && selectEmpresa.value !== '') {
+                return selectEmpresa.options[selectEmpresa.selectedIndex].text;
+            }
+            return "Todas las empresas";
+        }
+
+        async function cargarEmpresas() {
+            try {
+                const response = await fetch(API_BASE + '/api/catalogos/empresas', { headers: getAuthHeaders() });
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                const empresas = await response.json();
+                const select = document.getElementById('empresa');
+                select.innerHTML = '<option value="">Todas las empresas</option>';
+                empresas.forEach(e => { select.innerHTML += `<option value="${e.id}">${e.empresa || e.nombre}</option>`; });
+                
+                const rol = localStorage.getItem('user_rol');
+                const userEmpresa = localStorage.getItem('user_empresa');
+                if (rol === 'emp_admin' && userEmpresa) { 
+                    select.value = userEmpresa; 
+                    select.disabled = true; 
+                }
+            } catch (error) { console.error('Error cargando empresas:', error); }
+        }
+
+        function setFechasPredeterminadas() {
+            const userRol = localStorage.getItem('user_rol');
+            const diasRestar = (userRol === 'emp_admin') ? 7 : 30; 
+            
+            const fechaHoy = new Date();
+            const fechaInicio = new Date();
+            fechaInicio.setDate(fechaHoy.getDate() - diasRestar);
+            
+            document.getElementById('fechaInicio').value = fechaInicio.toISOString().split('T')[0];
+            document.getElementById('fechaFin').value = fechaHoy.toISOString().split('T')[0];
+        }
+
+        async function fetchReporteData() {
+            const fechaInicio = document.getElementById('fechaInicio').value;
+            const fechaFin = document.getElementById('fechaFin').value;
+            const empresa = document.getElementById('empresa') ? document.getElementById('empresa').value : '';
+            
+            const params = new URLSearchParams();
+            if (fechaInicio) params.append('fecha_inicio', fechaInicio);
+            if (fechaFin) params.append('fecha_fin', fechaFin);
+            if (empresa) params.append('empresa', empresa);
+            
+            try {
+                const url = `${API_BASE}/api/reportes/filtrado?${params.toString()}`;
+                
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    headers: getAuthHeaders()
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `Error HTTP: ${response.status}`);
+                }
+
+                const result = await response.json();
+                return result.status === 'success' ? result.data : null;
+
+            } catch (error) {
+                console.error('Error en fetchReporteData:', error);
+                return null;
+            }
+        }
+
+        function actualizarMetricas(data) {
+            const kpis = data.kpis;
+            document.getElementById('totalTickets').innerText = kpis.total_tickets;
+            document.getElementById('abiertos').innerText = kpis.abiertos;
+            document.getElementById('resueltos').innerText = kpis.resueltos;
+        }
+
+        function formatearFecha(fechaStr) {
+            if (!fechaStr) return '';
+            const fechaNativa = new Date(fechaStr);
+            if (!isNaN(fechaNativa.getTime())) return fechaNativa.toLocaleDateString('es-ES', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            return fechaStr.substring(0,10);
+        }
+
+        function actualizarTabla(data) {
+    const tbody = document.getElementById('tablaBody');
+    const fechaInicioSel = document.getElementById('fechaInicio').value;
+    const fechaFinSel = document.getElementById('fechaFin').value;
+
+    // 1. LIMPIEZA TOTAL: Borra cualquier registro previo (como los del día 26)
+    tbody.innerHTML = '';
+
+    // 2. Extracción de datos desde la respuesta del servidor
+    const externos = (data.tablas.ultimos_externos || []).map(t => ({ ...t, tipo: 'EXTERNO' }));
+    const internos = (data.tablas.ultimos_internos || []).map(t => ({ ...t, tipo: 'INTERNO' }));
+
+    // 3. Combinar y Ordenar por fecha (descendente)
+    const todosLosTickets = [...externos, ...internos].sort((a, b) => 
+        (b.fecha || '').localeCompare(a.fecha || '')
+    );
+
+    // 4. FILTRO DE SEGURIDAD (Frontend): Solo permite registros dentro del rango de los inputs
+    const ticketsFiltrados = todosLosTickets.filter(t => {
+        // Aseguramos que solo comparamos YYYY-MM-DD
+        const fechaTicket = new Date(t.fecha).toISOString().split('T')[0]; 
+        return fechaTicket >= fechaInicioSel && fechaTicket <= fechaFinSel;
+    });
+
+    // 5. Manejo de tabla vacía
+    if (ticketsFiltrados.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 50px; color: #64748b;">
+                    <i class="fas fa-calendar-times fa-3x" style="margin-bottom: 10px; opacity: 0.5;"></i>
+                    <p>No se encontraron registros estrictamente para el periodo seleccionado.</p>
+                </td>
+            </tr>`;
+        return;
+    }
+
+    // 6. Renderizado de filas
+    tbody.innerHTML = ticketsFiltrados.map(t => {
+        // Definición de colores por estado
+        let estadoClass = 'estado-pendiente';
+        const estado = (t.estado || '').toUpperCase();
+        
+        if (estado === 'RESUELTO' || estado === 'CERRADO') estadoClass = 'estado-resuelto';
+        else if (estado.includes('PROCESO') || estado.includes('ATENCIÓN')) estadoClass = 'estado-proceso';
+        else if (estado === 'ABIERTO') estadoClass = 'estado-pendiente';
+
+        return `
+            <tr>
+                <td>
+                    <span class="folio-badge">${t.codigo || '-'}</span><br>
+                    <span class="text-xs" style="margin-top: 5px; display: inline-block;">
+                        <i class="fas fa-tag"></i> ${t.tipo}
+                    </span>
+                </td>
+                <td>
+                    <strong>${t.empresa || '-'}</strong><br>
+                    <span class="text-xs" style="margin-top: 2px; display: inline-block;">
+                        <i class="fas fa-bus"></i> Autobús: <b>${t.num_autobus || '-'}</b>
+                    </span>
+                </td>
+                <td><span class="falla-text">${t.falla || 'No especificada'}</span></td>
+                <td><span class="solucion-text">${t.solucion || 'Aún sin solución registrada.'}</span></td>
+                <td><span class="estado-badge ${estadoClass}">${t.estado || '-'}</span></td>
+                <td>
+                    <span class="text-xs">
+                        <i class="far fa-calendar-alt"></i> ${formatearFecha(t.fecha)}
+                    </span>
+                </td>
+            </tr>`;
+    }).join('');
+}
+
+        async function actualizarReporte() {
+            const fInicio = document.getElementById('fechaInicio').value;
+            const fFin = document.getElementById('fechaFin').value;
+            const tbody = document.getElementById('tablaBody');
+
+            if (!fInicio || !fFin) {
+                alert('Ambas fechas son requeridas.');
+                return;
+            }
+            const fechaInicioDate = new Date(fInicio);
+            const fechaFinDate = new Date(fFin);
+            if (fechaInicioDate > fechaFinDate) {
+                alert('La fecha de inicio no puede ser posterior a la fecha de fin.');
+                return;
+            }
+
+            if (tbody) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Actualizando datos...</td></tr>';
+            }
+
+            try {
+                const data = await fetchReporteData();
+                if (data) {
+                    actualizarMetricas(data);
+                    actualizarTabla(data);
+                } else {
+                    throw new Error('No se recibieron datos');
+                }
+            } catch (error) {
+                console.error('Error al actualizar el reporte:', error);
+                document.getElementById('totalTickets').innerText = 'N/A';
+                document.getElementById('abiertos').innerText = 'N/A';
+                document.getElementById('resueltos').innerText = 'N/A';
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #e74c3c; padding: 20px;"><i class="fas fa-exclamation-triangle"></i> Error al conectar con el servidor.</td></tr>';
+                }
+            }
+        }
+
+        async function descargarPDF() {
+            const btnPDF = document.getElementById('downloadPDF');
+            const textoOriginal = btnPDF.innerHTML;
+            
+            btnPDF.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando PDF...';
+            btnPDF.disabled = true;
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF('l', 'pt', 'a4');
+
+                const fechaInicio = document.getElementById('fechaInicio').value || 'No especificada';
+                const fechaFin = document.getElementById('fechaFin').value || 'No especificada';
+                const nombreEmpresaTexto = obtenerNombreEmpresaUsuario();
+
+                let logoBase64 = null;
+                try {
+                    const response = await fetch(`${API_BASE}/logo sin fondo.png`);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        logoBase64 = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.readAsDataURL(blob);
+                        });
+                    }
+                } catch (e) { console.log('Logo no disponible para incrustar'); }
+
+                let startX = 40;
+                if (logoBase64) {
+                    doc.addImage(logoBase64, 'PNG', 40, 30, 60, 60);
+                    startX = 120;
+                }
+
+                doc.setTextColor(27, 43, 75);
+                doc.setFontSize(22);
+                doc.text("Documento Ejecutivo de Incidencias", startX, 50);
+
+                doc.setTextColor(171, 9, 106);
+                doc.setFontSize(12);
+                doc.text(`Período reportado: ${fechaInicio} al ${fechaFin}`, startX, 70);
+                
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(10);
+                doc.text(`Empresa: ${nombreEmpresaTexto}`, startX, 85);
+
+                doc.autoTable({
+                    html: '.table-preview table',
+                    startY: 110,
+                    theme: 'grid',
+                    styles: { 
+                        fontSize: 9,
+                        cellPadding: 6,
+                        textColor: [0, 0, 0]
+                    },
+                    headStyles: { 
+                        fillColor: [27, 43, 75],
+                        textColor: [255, 255, 255], 
+                        fontStyle: 'bold'
+                    },
+                    alternateRowStyles: {
+                        fillColor: [248, 250, 252]
+                    }
+                });
+
+                doc.save(`Reporte_INSITRA_${fechaFin.replace(/-/g, '')}.pdf`);
+                
+            } catch (err) {
+                console.error('Error generando PDF:', err);
+                alert('No se pudo generar el documento PDF. Intenta nuevamente.');
+            } finally {
+                btnPDF.innerHTML = textoOriginal;
+                btnPDF.disabled = false;
+            }
+        }
+
+        window.onload = async function() {
+            mostrarInfoUsuario();
+            
+            if (!localStorage.getItem('sesion')) {
+                localStorage.setItem('sesion', 'activa');
+                localStorage.setItem('user_nombre', 'Usuario Demo');
+                localStorage.setItem('user_rol', 'admin'); 
+                localStorage.setItem('user_empresa', '');
+            }
+
+            ajustarMenuPorRol();
+            await cargarEmpresas();
+
+            setFechasPredeterminadas();
+
+            await actualizarReporte();
+
+            if (isSupervisor) {
+                const generarBtn = document.getElementById('aplicarFiltros');
+                const limpiarBtn = document.getElementById('limpiarFiltros');
+                const pdfBtn = document.getElementById('downloadPDF');
+                if (generarBtn) generarBtn.style.display = 'none';
+                if (limpiarBtn) limpiarBtn.style.display = 'none';
+                if (pdfBtn) pdfBtn.style.display = 'none';
+            } else {
+                document.getElementById('aplicarFiltros').addEventListener('click', actualizarReporte);
+                document.getElementById('limpiarFiltros').addEventListener('click', function() {
+                    setFechasPredeterminadas();
+                    const sel = document.getElementById('empresa');
+                    if (sel && !sel.disabled) sel.value = '';
+                    actualizarReporte();
+                });
+                document.getElementById('downloadPDF').addEventListener('click', descargarPDF);
+            }
+            
+            document.getElementById('btn-logout').addEventListener('click', logout);
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Usuarios | Admin</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --primary-blue: #1a2980;
+            --accent-color: #AB096A;
+            --border-color: #dee2e6;
+        }
+
+        /* Estilos del formulario */
+        .form-container {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group label i {
+            color: var(--primary-blue);
+            margin-right: 8px;
+        }
+
+        .form-group .required {
+            color: var(--accent-color);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            background-color: #fff;
+            box-sizing: border-box;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(171, 9, 106, 0.1);
+        }
+
+        .form-control:disabled {
+            background-color: #f5f5f5;
+            cursor: not-allowed;
+        }
+
+        /* Estilos de la tabla */
+        .table-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .table-header h3 {
+            color: var(--primary-blue);
+            margin: 0;
+        }
+
+        .btn-refresh {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #666;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-refresh:hover {
+            background: #f5f5f5;
+        }
+
+        .btn-refresh:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            border-bottom: 2px solid #eee;
+            text-align: left;
+        }
+
+        th {
+            padding: 12px;
+            color: var(--primary-blue);
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .role-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: white;
+            display: inline-block;
+        }
+
+        .status-active {
+            color: #27ae60;
+        }
+
+        .status-inactive {
+            color: #e74c3c;
+        }
+
+        .btn-action {
+            background: transparent;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .btn-action:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .empresa-sistema {
+            background-color: #95a5a6;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+
+        /* Mensajes */
+        .loading-message {
+            text-align: center;
+            padding: 30px;
+            color: #888;
+        }
+
+        .error-message {
+            text-align: center;
+            padding: 20px;
+            color: #e74c3c;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+
+        /* Password strength */
+        .password-strength {
+            margin-top: 8px;
+            height: 5px;
+            background-color: #e1e1e1;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: all 0.3s ease;
+        }
+
+        .requirement-item {
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .requirement-item.valid {
+            color: #27ae60;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #f1f1f1;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn-cancel {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-cancel:hover {
+            background-color: #5a6268;
+        }
+
+        .btn-save {
+            background: var(--accent-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(171, 9, 106, 0.3);
+        }
+
+        .info-message {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            color: #666;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo-container">
+            <div class="logo-placeholder" id="logo-placeholder">
+                <i class="fas fa-tools"></i>
+            </div>
+            <img src="logo sin fondo.png" alt="Logo del Sistema" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
+            <div class="logo-text">
+                <h1>Sistema de <span>Incidencias</span></h1>
+                <div class="subtitle">Registro de Usuarios</div>
+            </div>
+        </div>
+
+        <div class="top-user-info">
+            <div class="user-details">
+                <span id="display-user-name" style="font-weight: bold; color: var(--primary-blue);">Cargando...</span>
+                <small id="display-user-role" style="display: block; color: var(--text-light); font-size: 0.75rem; text-align: right;">...</small>
+            </div>
+            
+            <button id="btn-logout" style="background: var(--accent-color); color: white; margin-left: 15px; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                <i class="fas fa-power-off"></i> Salir
+            </button>
+
+           
+        </div>
+    </div>
+
+    <div class="container">
+         <aside class="sidebar">
+            <div class="logo-sidebar">
+                <h2>Admin<span>Incidencias</span></h2>
+                <p>Sistema de Gestión</p>
+            </div>
+            <ul class="menu" id="sidebar-menu">
+                <li class="menu-item" id="menu-dashboard">
+                    <a href="index.html" class="menu-link active">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-reportes">
+                    <a href="reportes.html" class="menu-link">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Reportes</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-crear-ticket">
+                    <a href="crear-ticket.html" class="menu-link">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Crear Ticket</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-registro-usuarios">
+                    <a href="registro_usuario.html" class="menu-link">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Registro Usuarios</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-incidencias">
+                    <a href="incidencias.html" class="menu-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Incidencias</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-clientes">
+                    <a href="clientes.html" class="menu-link">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-tecnicos">
+                    <a href="tecnicos.html" class="menu-link">
+                        <i class="fas fa-users-cog"></i>
+                        <span>Técnicos</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-catalogos">
+                    <a href="catalogos.html" class="menu-link">
+                        <i class="fas fa-book"></i>
+                        <span>Catálogos</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+        <main class="main-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1 class="page-title" style="margin-bottom: 0;">
+                    <i class="fas fa-user-plus"></i> Registro de Usuarios
+                </h1>
+            </div>
+
+            <!-- Contenedor para mensajes de alerta -->
+            <div id="alertContainer" style="margin-bottom: 20px;"></div>
+
+            <!-- FORMULARIO DE REGISTRO -->
+            <div class="form-container">
+                <h3 style="color: var(--primary-blue); margin-top: 0; margin-bottom: 20px;">
+                    <i class="fas fa-user-edit"></i> Registrar Nuevo Usuario
+                </h3>
+                
+                <form id="registroForm">
+                    <div class="form-grid">
+                        <!-- Nombre -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-user"></i> Nombre <span class="required">*</span>
+                            </label>
+                            <input type="text" id="nombre" class="form-control" placeholder="Ej: Juan Carlos" required>
+                        </div>
+
+                        <!-- Primer Apellido -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-user-tag"></i> Primer Apellido <span class="required">*</span>
+                            </label>
+                            <input type="text" id="primerApellido" class="form-control" placeholder="Ej: Pérez" required>
+                        </div>
+
+                        <!-- Segundo Apellido -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-user-tag"></i> Segundo Apellido
+                            </label>
+                            <input type="text" id="segundoApellido" class="form-control" placeholder="Ej: Rodríguez">
+                        </div>
+
+                        <!-- Correo Electrónico -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-envelope"></i> Correo Electrónico <span class="required">*</span>
+                            </label>
+                            <input type="email" id="email" class="form-control" placeholder="ejemplo@correo.com" required>
+                        </div>
+
+                        <!-- Nombre de Usuario -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-id-card"></i> Nombre de Usuario <span class="required">*</span>
+                            </label>
+                            <input type="text" id="username" class="form-control" placeholder="Ej: jperez" required>
+                        </div>
+
+                        <!-- Rol -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-user-shield"></i> Rol <span class="required">*</span>
+                            </label>
+                            <select id="rol" class="form-control" required>
+                                <option value="" disabled selected>Seleccione un rol</option>
+                                <option value="super_admin">Super Administrador</option>
+                                <option value="emp_admin">Administrador de Empresa</option>
+                                <option value="supervisor">Supervisor</option>
+                            </select>
+                        </div>
+
+                        <!-- Campo Empresa (solo visible para emp_admin) -->
+                        <div class="form-group" id="group-empresa" style="display: none; grid-column: span 2;">
+                            <label>
+                                <i class="fas fa-building"></i> Asignar Empresa <span class="required">*</span>
+                            </label>
+                            <select id="id_empresa" class="form-control">
+                                <option value="">Seleccione una empresa...</option>
+                            </select>
+                            <small style="font-size: 0.75rem; color: #888; margin-top: 5px; display: block;">
+                                <i class="fas fa-info-circle"></i> Seleccione la empresa para el Administrador
+                            </small>
+                        </div>
+
+                        <!-- Contraseña -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-lock"></i> Contraseña <span class="required">*</span>
+                            </label>
+                            <input type="password" id="password" class="form-control" placeholder="Mínimo 8 caracteres" required>
+                            
+                            <!-- Barra de fortaleza -->
+                            <div class="password-strength">
+                                <div id="passwordStrengthBar" class="password-strength-bar"></div>
+                            </div>
+                            <div id="passwordStrengthText" class="password-strength-text"></div>
+                        </div>
+
+                        <!-- Confirmar Contraseña -->
+                        <div class="form-group">
+                            <label>
+                                <i class="fas fa-lock"></i> Confirmar Contraseña <span class="required">*</span>
+                            </label>
+                            <input type="password" id="confirmPassword" class="form-control" placeholder="Repita la contraseña" required>
+                            <small id="passwordMatch" style="font-size: 12px; margin-top: 5px; display: block;"></small>
+                        </div>
+                    </div>
+
+                    <!-- Requisitos de contraseña -->
+                    <div style="background-color: #f8f9fa; border-radius: 8px; padding: 15px; margin: 20px 0;">
+                        <p style="margin-bottom: 10px; font-weight: 600; color: #555;">
+                            <i class="fas fa-shield-alt" style="color: var(--primary-blue);"></i> La contraseña debe tener:
+                        </p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                            <div id="req-length" class="requirement-item">
+                                <i class="far fa-circle"></i> Mínimo 8 caracteres
+                            </div>
+                            <div id="req-uppercase" class="requirement-item">
+                                <i class="far fa-circle"></i> Al menos una mayúscula
+                            </div>
+                            <div id="req-lowercase" class="requirement-item">
+                                <i class="far fa-circle"></i> Al menos una minúscula
+                            </div>
+                            <div id="req-number" class="requirement-item">
+                                <i class="far fa-circle"></i> Al menos un número
+                            </div>
+                            <div id="req-special" class="requirement-item">
+                                <i class="far fa-circle"></i> Al menos un carácter especial
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-cancel" onclick="limpiarFormulario()">
+                            <i class="fas fa-times"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-save">
+                            <i class="fas fa-save"></i> Guardar usuario
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TABLA DE USUARIOS REGISTRADOS -->
+            <div class="table-container">
+                <div class="table-header">
+                    <h3><i class="fas fa-list"></i> Usuarios Registrados</h3>
+                    <button onclick="cargarUsuarios()" class="btn-refresh" id="refreshBtn">
+                        <i class="fas fa-sync"></i> Refrescar
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Usuario</th>
+                                <th>Correo</th>
+                                <th>Rol</th>
+                                <th>Empresa</th>
+                                <th>Estado</th>
+                                <th style="text-align: center;">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaUsuarios">
+                            <tr>
+                                <td colspan="7" class="loading-message">
+                                    <i class="fas fa-circle-notch fa-spin"></i> Cargando usuarios...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Configuración
+        const API_URL = "http://localhost:5000/api";
+        let isSupervisor = false;  // Se determinará al cargar la sesión
+
+        // ========== FUNCIONES DE UTILERÍA ==========
+        function mostrarNotificacion(mensaje, tipo) {
+            const alertContainer = document.getElementById('alertContainer');
+            const icon = tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            const bgColor = tipo === 'success' ? '#10b981' : '#ef4444';
+            
+            alertContainer.innerHTML = `
+                <div style="padding: 15px 20px; border-radius: 8px; background: ${bgColor}; color: white; display: flex; align-items: center; gap: 10px; animation: slideIn 0.3s ease;">
+                    <i class="fas ${icon}"></i>
+                    ${mensaje}
+                </div>
+            `;
+            
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+
+        // ========== AJUSTES POR ROL ==========
+        function ajustarInterfazPorRol(rol) {
+            // Ocultar elementos del menú para emp_admin
+            if (rol === 'emp_admin') {
+                const menuItems = document.querySelectorAll('.menu-item');
+                // Los índices de los elementos del menú: asumiendo el orden en el HTML
+                // 0: Dashboard, 1: Reportes, 2: Crear Ticket, 3: Registro Usuarios, 4: Incidencias, 5: Clientes, 6: Técnicos, 7: Catálogos
+                // Permitir solo Dashboard, Reportes, Incidencias (índices 0, 1, 4)
+                // Ocultar los demás
+                menuItems.forEach((item, index) => {
+                    if (index !== 0 && index !== 1 && index !== 4) {
+                        item.style.display = 'none';
+                    }
+                });
+                // Además, redirigir si está en una página no permitida (ya lo hacemos)
+                return;
+            }
+
+            // Si es supervisor, poner modo solo lectura
+            if (rol === 'supervisor') {
+                isSupervisor = true;
+                // Deshabilitar todos los inputs, selects y botones del formulario
+                const form = document.getElementById('registroForm');
+                if (form) {
+                    form.querySelectorAll('input, select, button').forEach(el => {
+                        el.disabled = true;
+                    });
+                }
+                // Los botones de acción en la tabla se deshabilitan al renderizar (en cargarUsuarios)
+            }
+        }
+
+        // ========== VALIDACIÓN DE CONTRASEÑA ==========
+        function setupPasswordValidation() {
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirmPassword');
+            
+            password.addEventListener('input', validatePasswordStrength);
+            confirmPassword.addEventListener('input', checkPasswordMatch);
+        }
+
+        function validatePasswordStrength() {
+            if (isSupervisor) return; // No validar si es supervisor
+            const val = document.getElementById('password').value;
+            const strengthBar = document.getElementById('passwordStrengthBar');
+            const strengthText = document.getElementById('passwordStrengthText');
+            
+            const hasLength = val.length >= 8;
+            const hasUppercase = /[A-Z]/.test(val);
+            const hasLowercase = /[a-z]/.test(val);
+            const hasNumber = /[0-9]/.test(val);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(val);
+            
+            updateRequirement('req-length', hasLength);
+            updateRequirement('req-uppercase', hasUppercase);
+            updateRequirement('req-lowercase', hasLowercase);
+            updateRequirement('req-number', hasNumber);
+            updateRequirement('req-special', hasSpecial);
+            
+            let strength = 0;
+            if (hasLength) strength += 20;
+            if (hasUppercase) strength += 20;
+            if (hasLowercase) strength += 20;
+            if (hasNumber) strength += 20;
+            if (hasSpecial) strength += 20;
+            
+            strengthBar.style.width = strength + '%';
+            
+            if (strength <= 40) {
+                strengthBar.style.backgroundColor = '#e74c3c';
+                strengthText.textContent = 'Contraseña débil';
+                strengthText.style.color = '#e74c3c';
+            } else if (strength <= 80) {
+                strengthBar.style.backgroundColor = '#f39c12';
+                strengthText.textContent = 'Contraseña media';
+                strengthText.style.color = '#f39c12';
+            } else {
+                strengthBar.style.backgroundColor = '#27ae60';
+                strengthText.textContent = 'Contraseña fuerte';
+                strengthText.style.color = '#27ae60';
+            }
+        }
+
+        function updateRequirement(elementId, isValid) {
+            const element = document.getElementById(elementId);
+            if (isValid) {
+                element.classList.add('valid');
+                element.innerHTML = '<i class="fas fa-check-circle" style="color: #27ae60;"></i> ' + element.textContent.substring(2);
+            } else {
+                element.classList.remove('valid');
+                element.innerHTML = '<i class="far fa-circle"></i> ' + element.textContent.substring(2);
+            }
+        }
+
+        function checkPasswordMatch() {
+            if (isSupervisor) return false;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const matchMsg = document.getElementById('passwordMatch');
+            
+            if (password && confirmPassword) {
+                if (password === confirmPassword) {
+                    matchMsg.innerHTML = '<i class="fas fa-check-circle" style="color: #27ae60;"></i> Las contraseñas coinciden';
+                    matchMsg.style.color = '#27ae60';
+                    return true;
+                } else {
+                    matchMsg.innerHTML = '<i class="fas fa-times-circle" style="color: #e74c3c;"></i> Las contraseñas no coinciden';
+                    matchMsg.style.color = '#e74c3c';
+                    return false;
+                }
+            }
+            return false;
+        }
+
+        function limpiarFormulario() {
+            if (isSupervisor) return;
+            document.getElementById('registroForm').reset();
+            document.getElementById('group-empresa').style.display = 'none';
+            
+            document.getElementById('passwordStrengthBar').style.width = '0';
+            document.getElementById('passwordStrengthText').textContent = '';
+            document.getElementById('passwordMatch').innerHTML = '';
+            
+            const requirements = ['req-length', 'req-uppercase', 'req-lowercase', 'req-number', 'req-special'];
+            requirements.forEach(req => {
+                const element = document.getElementById(req);
+                element.classList.remove('valid');
+                element.innerHTML = '<i class="far fa-circle"></i> ' + element.textContent.substring(2);
+            });
+        }
+
+        // ========== CARGAR EMPRESAS ==========
+        async function cargarCatalogoEmpresas() {
+            if (isSupervisor) return; // no necesario, pero por si acaso
+            try {
+                const response = await fetch(`${API_URL}/catalogos/empresas`);
+                const empresas = await response.json();
+                console.log('Empresas cargadas:', empresas);
+                
+                const select = document.getElementById('id_empresa');
+                
+                if (Array.isArray(empresas)) {
+                    select.innerHTML = '<option value="">Seleccione una empresa...</option>' + 
+                        empresas.map(e => `<option value="${e.id}">${e.nombre || e.empresa}</option>`).join('');
+                } else if (empresas.data && Array.isArray(empresas.data)) {
+                    select.innerHTML = '<option value="">Seleccione una empresa...</option>' + 
+                        empresas.data.map(e => `<option value="${e.id}">${e.nombre || e.empresa}</option>`).join('');
+                }
+            } catch (error) {
+                console.error('Error cargando empresas:', error);
+            }
+        }
+
+        // ========== CARGAR USUARIOS ==========
+        async function cargarUsuarios() {
+            const tbody = document.getElementById('tablaUsuarios');
+            
+            try {
+                const response = await fetch(`${API_URL}/admin/usuarios`);
+                
+                if (!response.ok) {
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                
+                const usuarios = await response.json();
+                console.log('Usuarios cargados:', usuarios);
+
+                if (Array.isArray(usuarios) && usuarios.length > 0) {
+                    let html = '';
+                    
+                    usuarios.forEach(u => {
+                        const nombreCompleto = `${u.nombre || ''} ${u.primer_apellido || ''} ${u.segundo_apellido || ''}`.trim();
+                        
+                        // Determinar el color del rol
+                        let roleColor = '#95a5a6';
+                        if (u.rol === 'super_admin') roleColor = '#9b59b6';
+                        else if (u.rol === 'emp_admin') roleColor = '#3498db';
+                        else if (u.rol === 'supervisor') roleColor = '#f39c12';
+                        
+                        // Mostrar empresa: Si es emp_admin muestra su empresa, si no muestra "SISTEMA"
+                        let empresaTexto = 'SISTEMA';
+                        if (u.rol === 'emp_admin') {
+                            empresaTexto = u.nombre_empresa || 'No asignada';
+                        }
+                        
+                        // Botón de acción: solo visible para super_admin; si es supervisor se deshabilita
+                        let botonAccion = '';
+                        if (!isSupervisor) {
+                            botonAccion = `
+                                <button onclick="toggleEstado(${u.id}, '${u.rol}')" 
+                                        style="background: ${u.activo ? '#e74c3c' : '#27ae60'}; color: white; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas ${u.activo ? 'fa-ban' : 'fa-check'}"></i>
+                                    ${u.activo ? 'Desactivar' : 'Activar'}
+                                </button>
+                            `;
+                        } else {
+                            // Modo solo lectura: mostrar el estado pero sin botón (o botón deshabilitado)
+                            botonAccion = `<span style="color: ${u.activo ? '#27ae60' : '#e74c3c'};"><i class="fas ${u.activo ? 'fa-check-circle' : 'fa-times-circle'}"></i> ${u.activo ? 'Activo' : 'Inactivo'}</span>`;
+                        }
+                        
+                        html += `
+                            <tr>
+                                <td style="padding: 12px;">${nombreCompleto || 'N/A'}</td>
+                                <td style="padding: 12px;"><strong>${u.usuario || 'N/A'}</strong></td>
+                                <td style="padding: 12px;">${u.correo || 'N/A'}</td>
+                                <td style="padding: 12px;">
+                                    <span class="role-badge" style="background: ${roleColor};">
+                                        ${(u.rol || 'N/A').toUpperCase().replace('_', ' ')}
+                                    </span>
+                                </td>
+                                <td style="padding: 12px;">
+                                    ${empresaTexto}
+                                </td>
+                                <td style="padding: 12px;">
+                                    <span style="color: ${u.activo ? '#27ae60' : '#e74c3c'};">
+                                        <i class="fas ${u.activo ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                                        ${u.activo ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </td>
+                                <td style="padding: 12px; text-align: center;">
+                                    ${botonAccion}
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    
+                    tbody.innerHTML = html;
+                    
+                } else if (Array.isArray(usuarios) && usuarios.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="empty-message">
+                                <i class="fas fa-info-circle"></i> No hay usuarios registrados
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    throw new Error('Formato de datos incorrecto');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="error-message">
+                            <i class="fas fa-exclamation-triangle"></i> Error al cargar usuarios: ${error.message}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // ========== CAMBIAR ESTADO (solo super_admin) ==========
+        async function toggleEstado(id, rol) {
+            if (isSupervisor) {
+                mostrarNotificacion('No tiene permisos para realizar esta acción', 'error');
+                return;
+            }
+            if (!confirm('¿Está seguro de cambiar el estado del usuario?')) return;
+
+            try {
+                const response = await fetch(`${API_URL}/admin/usuarios/${id}/estado`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rol: rol })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    mostrarNotificacion(result.message || 'Estado actualizado', 'success');
+                    cargarUsuarios();
+                } else {
+                    mostrarNotificacion(result.message || result.error || 'Error al cambiar estado', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('Error de conexión', 'error');
+            }
+        }
+
+        // ========== REGISTRAR USUARIO (solo super_admin) ==========
+        async function handleSubmit(e) {
+            e.preventDefault();
+            
+            if (isSupervisor) {
+                mostrarNotificacion('No tiene permisos para registrar usuarios', 'error');
+                return;
+            }
+            
+            const nombre = document.getElementById('nombre').value.trim();
+            const primerApellido = document.getElementById('primerApellido').value.trim();
+            const segundoApellido = document.getElementById('segundoApellido').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const username = document.getElementById('username').value.trim();
+            const rol = document.getElementById('rol').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const id_empresa = document.getElementById('id_empresa').value;
+
+            // Validaciones
+            if (!nombre || !primerApellido || !email || !username || !rol || !password || !confirmPassword) {
+                mostrarNotificacion('Por favor complete todos los campos obligatorios', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                mostrarNotificacion('Las contraseñas no coinciden', 'error');
+                return;
+            }
+
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                mostrarNotificacion('Por favor ingrese un correo electrónico válido', 'error');
+                return;
+            }
+
+            if (rol === 'emp_admin' && !id_empresa) {
+                mostrarNotificacion('Debe seleccionar una empresa para el Administrador de Empresa', 'error');
+                return;
+            }
+
+            const usuarioData = {
+                nombre: nombre,
+                primer_apellido: primerApellido,
+                segundo_apellido: segundoApellido || null,
+                email: email,
+                username: username,
+                rol: rol,
+                password: password,
+                id_empresa: rol === 'emp_admin' ? parseInt(id_empresa) : null
+            };
+
+            console.log('Enviando datos:', usuarioData);
+
+            try {
+                const response = await fetch(`${API_URL}/admin/usuarios`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(usuarioData)
+                });
+
+                const result = await response.json();
+                console.log('Respuesta del servidor:', result);
+
+                if (response.ok) {
+                    mostrarNotificacion(result.message || 'Usuario registrado exitosamente', 'success');
+                    limpiarFormulario();
+                    cargarUsuarios();
+                } else {
+                    mostrarNotificacion(result.message || result.error || 'Error al registrar usuario', 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('Error de conexión con el servidor', 'error');
+            }
+        }
+
+        // ========== INICIALIZACIÓN ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar sesión
+            const sesion = localStorage.getItem('sesion');
+            if (!sesion) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            let user;
+            try {
+                user = JSON.parse(sesion);
+            } catch (e) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const role = user.rol;
+
+            // Redirigir si es emp_admin (no tiene acceso a esta página)
+            if (role === 'emp_admin') {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Mostrar información del usuario
+            document.getElementById('display-user-name').textContent = user.nombre || 'Usuario';
+            document.getElementById('display-user-role').textContent = (user.rol || 'Rol desconocido').toUpperCase();
+
+            // Ajustar interfaz según rol (solo lectura para supervisor)
+            ajustarInterfazPorRol(role);
+
+            // Cargar usuarios
+            cargarUsuarios();
+
+            // Logout
+            document.getElementById('btn-logout').addEventListener('click', function() {
+                localStorage.removeItem('sesion');
+                window.location.href = 'login.html';
+            });
+
+            // Mostrar campo de empresa cuando se selecciona emp_admin
+            document.getElementById('rol').addEventListener('change', async function() {
+                if (isSupervisor) return;
+                const groupEmpresa = document.getElementById('group-empresa');
+                if (this.value === 'emp_admin') {
+                    groupEmpresa.style.display = 'block';
+                    await cargarCatalogoEmpresas();
+                } else {
+                    groupEmpresa.style.display = 'none';
+                    document.getElementById('id_empresa').value = '';
+                }
+            });
+
+            // Configurar validación de contraseña (solo si no es supervisor)
+            if (!isSupervisor) {
+                setupPasswordValidation();
+            }
+
+            // Manejar envío del formulario
+            document.getElementById('registroForm').addEventListener('submit', handleSubmit);
+        });
+
+        // Estilos de animación
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { opacity: 0; transform: translateY(-10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            input:focus, select:focus {
+                border-color: var(--accent-color) !important;
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(171, 9, 106, 0.1);
+            }
+            
+            button[type="submit"]:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 10px rgba(171, 9, 106, 0.3);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

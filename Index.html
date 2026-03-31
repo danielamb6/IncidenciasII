@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Dashboard</title>
+    
+    <script>
+        if (!localStorage.getItem('sesion')) {
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Estilos específicos para el dashboard */
+        .loading-row td {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+        }
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 9999;
+            display: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        /* Estilos para los badges de estado y tipo */
+        .estado-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: white;
+            text-align: center;
+            min-width: 100px;
+        }
+        .estado-abierto { background-color: #e74c3c; }      /* Rojo */
+        .estado-atencion { background-color: #f1c40f; color: #2c3e50; } /* Amarillo */
+        .estado-espera { background-color: #e67e22; }      /* Naranja */
+        .estado-resuelto { background-color: #2ecc71; }    /* Verde */
+        
+        .tipo-badge {
+            font-size: 0.75rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .tipo-interno { background: rgba(171, 9, 106, 0.1); color: var(--accent-color); border: 1px solid var(--accent-color); }
+        .tipo-externo { background: rgba(26, 41, 128, 0.1); color: var(--primary-blue); border: 1px solid var(--primary-blue); }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo-container">
+            <div class="logo-placeholder" id="logo-placeholder">
+                <i class="fas fa-tools"></i>
+            </div>
+            <img src="logo sin fondo.png" alt="Logo del Sistema" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
+            <div class="logo-text">
+                <h1>Sistema de <span>Incidencias</span></h1>
+                <div class="subtitle">Dashboard</div>
+            </div>
+        </div>
+
+        <div class="top-user-info">
+            <div class="user-details">
+                <span class="user-name" id="display-user-name">Cargando...</span>
+                <small class="user-role" id="display-user-role">...</small>
+            </div>
+            <button id="btn-logout">
+                <i class="fas fa-power-off"></i> Salir
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo-sidebar">
+                <h2>Admin<span>Incidencias</span></h2>
+                <p>Sistema de Gestión</p>
+            </div>
+            <ul class="menu" id="sidebar-menu">
+                <li class="menu-item" id="menu-dashboard">
+                    <a href="index.html" class="menu-link active">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-reportes">
+                    <a href="reportes.html" class="menu-link">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Reportes</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-crear-ticket">
+                    <a href="crear-ticket.html" class="menu-link">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Crear Ticket</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-registro-usuarios">
+                    <a href="registro_usuario.html" class="menu-link">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Registro Usuarios</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-incidencias">
+                    <a href="incidencias.html" class="menu-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Incidencias</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-clientes">
+                    <a href="clientes.html" class="menu-link">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-tecnicos">
+                    <a href="tecnicos.html" class="menu-link">
+                        <i class="fas fa-users-cog"></i>
+                        <span>Técnicos</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-catalogos">
+                    <a href="catalogos.html" class="menu-link">
+                        <i class="fas fa-book"></i>
+                        <span>Catálogos</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <h1 class="page-title">
+                <i class="fas fa-chart-line" style="color: var(--accent-color);"></i> 
+                Dashboard de Incidencias
+            </h1>
+
+            <div class="data-summary" id="kpi-container">
+                <div class="summary-card">
+                    <i class="fas fa-ticket-alt"></i>
+                    <h3 id="total-incidencias">0</h3>
+                    <p>Total Incidencias (hoy)</p>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-clock"></i>
+                    <h3 id="abiertas-count">0</h3>
+                    <p>Abiertas (total)</p>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-cogs"></i>
+                    <h3 id="atencion-count">0</h3>
+                    <p>En Atención (hoy)</p>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-hourglass-half"></i>
+                    <h3 id="espera-refaccion-count">0</h3>
+                    <p>Espera Refacción (total)</p>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-check-circle"></i>
+                    <h3 id="resueltos-count">0</h3>
+                    <p>Resueltos (hoy)</p>
+                </div>
+            </div>
+
+            <div class="table-preview">
+                <h2><i class="fas fa-list"></i> Tickets Recientes</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Tipo</th>
+                            <th>Autobús</th>
+                            <th>Falla</th>
+                            <th>Empresa</th>
+                            <th>Fecha</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="all-tickets-body">
+                        <tr class="loading-row">
+                            <td colspan="7">
+                                <i class="fas fa-spinner fa-spin"></i> Cargando tickets...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+    </div>
+
+    <div id="toast-notification" class="toast-notification"></div>
+
+    <script>
+        // ========== CONFIGURACIÓN ==========
+        const API_URL = "http://localhost:5000/api";
+
+        // ========== FUNCIONES COMUNES ==========
+        function mostrarInfoUsuario() {
+            const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
+            document.getElementById('display-user-name').textContent = sesion.nombre || 'Usuario';
+            document.getElementById('display-user-role').textContent = (sesion.rol || 'Rol').toUpperCase();
+        }
+
+        function logout() {
+            localStorage.removeItem('sesion');
+            window.location.href = 'login.html';
+        }
+
+        // ========== AJUSTES POR ROL ==========
+        function ajustarMenuPorRol() {
+            const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
+            const rol = sesion.rol;
+
+            if (rol === 'emp_admin') {
+                const ocultar = [
+                    'menu-crear-ticket',
+                    'menu-registro-usuarios',
+                    'menu-clientes',
+                    'menu-tecnicos',
+                    'menu-catalogos'
+                ];
+                ocultar.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+            }
+        }
+
+        // ========== OBTENER DATOS DEL DASHBOARD ==========
+        async function fetchDashboardData() {
+            const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
+            const url = `${API_URL}/dashboard-data`;
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'X-User-Rol': sesion.rol || '',
+                        'X-User-Empresa': sesion.id_empresa || ''
+                    }
+                });
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching dashboard data:', error);
+                return null;
+            }
+        }
+
+        // ========== NOTIFICACIÓN ==========
+        function mostrarNotificacion(mensaje, tipo) {
+            const toast = document.getElementById('toast-notification');
+            toast.style.background = tipo === 'success' ? '#10b981' : '#ef4444';
+            toast.innerHTML = `<i class="fas ${tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${mensaje}`;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 3000);
+        }
+
+        // ========== ACTUALIZAR KPIs ==========
+        function actualizarKPIs(stats) {
+            document.getElementById('total-incidencias').textContent = stats?.total_hoy || 0;
+            document.getElementById('abiertas-count').textContent = stats?.abiertas_total || 0;
+            document.getElementById('atencion-count').textContent = stats?.atencion_hoy || 0;
+            document.getElementById('espera-refaccion-count').textContent = stats?.espera_refaccion_total || 0;
+            document.getElementById('resueltos-count').textContent = stats?.resueltos_hoy || 0;
+        }
+
+        // ========== MAPEO DE ESTADOS ==========
+        const estadoMap = {
+            'ABIERTO': { class: 'estado-abierto', texto: 'ABIERTO' },
+            'PENDIENTE': { class: 'estado-abierto', texto: 'ABIERTO' },
+            'EN PROCESO': { class: 'estado-atencion', texto: 'EN ATENCION' },
+            'EN ATENCION': { class: 'estado-atencion', texto: 'EN ATENCION' },
+            'ESPERA_REFACCION': { class: 'estado-espera', texto: 'ESPERA REFACCION' },
+            'ESPERA REFACCION': { class: 'estado-espera', texto: 'ESPERA REFACCION' },
+            'RESUELTO': { class: 'estado-resuelto', texto: 'RESUELTO' }
+        };
+
+        // ========== ACTUALIZAR TABLA ==========
+        function actualizarTabla(tickets) {
+            const tbody = document.getElementById('all-tickets-body');
+            if (!tickets || tickets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No hay tickets registrados</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = tickets.map(t => {
+                const estadoRaw = (t.estado || '').trim().toUpperCase();
+                const estadoNormalizado = estadoMap[estadoRaw] || { class: '', texto: estadoRaw || 'DESCONOCIDO' };
+                
+                // Extraer directamente la fecha enviada por el TO_CHAR del backend
+                const fechaFormateada = t.fecha || '-';
+                
+                // Badge de tipo (Interno / Externo)
+                const tipoClass = t.tipo === 'INTERNO' ? 'tipo-interno' : 'tipo-externo';
+
+                return `
+                    <tr>
+                        <td><span class="folio-badge">${t.codigo || 'N/A'}</span></td>
+                        <td><span class="tipo-badge ${tipoClass}">${t.tipo || 'EXTERNO'}</span></td>
+                        <td>${t.num_autobus || '-'}</td>
+                        <td>${t.falla || '-'}</td>
+                        <td><strong>${t.empresa || '-'}</strong></td>
+                        <td>${fechaFormateada}</td>
+                        <td><span class="estado-badge ${estadoNormalizado.class}">${estadoNormalizado.texto}</span></td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ========== CARGAR TODO ==========
+        async function cargarDashboard() {
+            document.getElementById('total-incidencias').textContent = '...';
+            document.getElementById('all-tickets-body').innerHTML = '<tr><td colspan="7" style="text-align: center;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+
+            const data = await fetchDashboardData();
+            if (data && data.status === 'success') {
+                actualizarKPIs(data.stats);
+                actualizarTabla(data.tickets);
+            } else {
+                actualizarKPIs({});
+                actualizarTabla([]);
+            }
+        }
+
+        // ========== INICIALIZACIÓN ==========
+        document.addEventListener('DOMContentLoaded', async function() {
+            mostrarInfoUsuario();
+            ajustarMenuPorRol();
+            document.getElementById('btn-logout').addEventListener('click', logout);
+            await cargarDashboard();
+        });
+    </script>
+</body>
+</html>

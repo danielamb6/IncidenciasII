@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Catálogos Maestros</title>
+    
+    <script>
+        if (!localStorage.getItem('sesion')) {
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* ===== ESTILOS PROFESIONALES PARA CATÁLOGOS ===== */
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --light: #f8fafc;
+            --dark: #1e293b;
+            --border: #e2e8f0;
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+        }
+
+        /* Layout principal */
+        .catalog-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        /* Sidebar de equipos */
+        .equipment-sidebar {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .sidebar-header i {
+            font-size: 28px;
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.1);
+            padding: 12px;
+            border-radius: 14px;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .sidebar-header p {
+            color: var(--secondary);
+            font-size: 0.85rem;
+            margin: 5px 0 0;
+        }
+
+        /* Selector de equipos */
+        .equipo-selector {
+            margin-bottom: 20px;
+        }
+
+        .equipo-selector label {
+            display: block;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .master-select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            color: var(--dark);
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .master-select:hover {
+            border-color: var(--primary);
+        }
+
+        .master-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        /* Botones de acción */
+        .btn-add-inline {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 15px;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-add-inline:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-add-inline i {
+            font-size: 1.1rem;
+        }
+
+        /* Panel de detalles */
+        .details-panel {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            border: 1px solid var(--border);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .panel-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .panel-title i {
+            font-size: 24px;
+            color: var(--primary);
+            background: rgba(37, 99, 235, 0.1);
+            padding: 10px;
+            border-radius: 12px;
+        }
+
+        .panel-title h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+        }
+
+        .panel-title span {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        /* Estado del equipo */
+        .equipo-status {
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .equipo-status.active {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .equipo-status.inactive {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .equipo-status:hover {
+            transform: scale(1.05);
+        }
+
+        /* Tabs */
+        .tabs-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .tab-link {
+            padding: 12px 20px;
+            background: var(--light);
+            border: 1px solid var(--border);
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-link i {
+            font-size: 1rem;
+        }
+
+        .tab-link:hover {
+            background: white;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-link.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* Listas de catálogos */
+        .catalog-list {
+            list-style: none;
+            padding: 0;
+            margin: 15px 0;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .catalog-list li {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+        }
+
+        .catalog-list li:last-child {
+            border-bottom: none;
+        }
+
+        .catalog-list li:hover {
+            background: var(--light);
+        }
+
+        .item-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .item-icon {
+            width: 36px;
+            height: 36px;
+            background: rgba(37, 99, 235, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+        }
+
+        .item-name {
+            font-weight: 500;
+            color: var(--dark);
+        }
+
+        .item-name.inactive {
+            opacity: 0.5;
+            text-decoration: line-through;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .toggle-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            transition: all 0.2s;
+        }
+
+        .toggle-btn.active {
+            color: var(--success);
+        }
+
+        .toggle-btn.inactive {
+            color: var(--danger);
+        }
+
+        .toggle-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Estado vacío */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 60px;
+            background: var(--light);
+            border: 2px dashed var(--border);
+            border-radius: 20px;
+            color: var(--secondary);
+            text-align: center;
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: var(--border);
+        }
+
+        .empty-state h4 {
+            font-size: 1.2rem;
+            margin-bottom: 8px;
+            color: var(--dark);
+        }
+
+        .empty-state p {
+            font-size: 0.9rem;
+            max-width: 300px;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            width: 450px;
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: modalSlide 0.3s ease;
+        }
+
+        @keyframes modalSlide {
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .modal-header h3 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--dark);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-header h3 i {
+            color: var(--primary);
+        }
+
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: var(--light);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--secondary);
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 25px;
+        }
+
+        .modal-actions button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-cancel {
+            background: var(--light);
+            color: var(--secondary);
+        }
+
+        .btn-cancel:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-save {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Botones de navegación */
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .nav-btn {
+            padding: 12px 24px;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 30px;
+            font-weight: 600;
+            color: var(--secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn i {
+            font-size: 1rem;
+        }
+
+        .nav-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .nav-btn:hover:not(.active) {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .catalog-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .equipment-sidebar {
+                position: static;
+            }
+        }
+
+        /* Loading spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo-container">
+            <div class="logo-placeholder" id="logo-placeholder"><i class="fas fa-tools"></i></div>
+            <img src="logo sin fondo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'">            
+            <div class="logo-text">
+                <h1>Sistema de <span>Incidencias</span></h1>
+                <div class="subtitle">Gestión de Catálogos</div>
+            </div>
+        </div>
+
+        <div class="top-user-info">
+            <div class="user-details">
+                <span class="user-name" id="display-user-name">Cargando...</span>
+                <small class="user-role" id="display-user-role">...</small>
+            </div>
+            <button id="btn-logout">
+                <i class="fas fa-power-off"></i> Salir
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo-sidebar">
+                <h2>Admin<span>Incidencias</span></h2>
+                <p>Sistema de Gestión</p>
+            </div>
+            <ul class="menu" id="sidebar-menu">
+                <li class="menu-item" id="menu-dashboard">
+                    <a href="index.html" class="menu-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-reportes">
+                    <a href="reportes.html" class="menu-link">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Reportes</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-crear-ticket">
+                    <a href="crear-ticket.html" class="menu-link">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Crear Ticket</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-registro-usuarios">
+                    <a href="registro_usuario.html" class="menu-link">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Registro Usuarios</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-incidencias">
+                    <a href="incidencias.html" class="menu-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Incidencias</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-clientes">
+                    <a href="clientes.html" class="menu-link">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-tecnicos">
+                    <a href="tecnicos.html" class="menu-link">
+                        <i class="fas fa-users-cog"></i>
+                        <span>Técnicos</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-catalogos">
+                    <a href="catalogos.html" class="menu-link active">
+                        <i class="fas fa-book"></i>
+                        <span>Catálogos</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <h1 class="page-title"><i class="fas fa-folder-tree"></i> Centro de Catálogos Maestros</h1>
+
+            <!-- Botones de navegación -->
+            <div class="nav-buttons">
+                <button class="nav-btn active" onclick="alternarVista('equipos', this)">
+                    <i class="fas fa-microchip"></i> Equipos
+                </button>
+                <button class="nav-btn" onclick="alternarVista('empresas', this)">
+                    <i class="fas fa-building"></i> Empresas
+                </button>
+                <button class="nav-btn" onclick="alternarVista('especialidades', this)">
+                    <i class="fas fa-star"></i> Especialidades
+                </button>
+            </div>
+
+            <!-- SECCIÓN EQUIPOS -->
+            <div id="seccion-equipos" class="catalog-layout">
+                <!-- Sidebar de equipos -->
+                <aside class="equipment-sidebar">
+                    <div class="sidebar-header">
+                        <i class="fas fa-microchip"></i>
+                        <div>
+                            <h2>Equipos Registrados</h2>
+                            <p>Selecciona un equipo para gestionar sus catálogos</p>
+                        </div>
+                    </div>
+
+                    <div class="equipo-selector">
+                        <label><i class="fas fa-search"></i> Buscar equipo</label>
+                        <select id="master-equipo" class="master-select" onchange="cargarDetallesEquipo(this.value)">
+                            <option value="">-- Seleccione un equipo --</option>
+                        </select>
+                    </div>
+
+                    <button id="btn-registrar-equipo" class="btn-add-inline" onclick="abrirModalNuevoEquipo()">
+                        <i class="fas fa-plus-circle"></i> Registrar Equipo Nuevo
+                    </button>
+                </aside>
+
+                <!-- Panel de detalles del equipo -->
+                <section id="panel-principal-detalles">
+                    <!-- Estado sin selección -->
+                    <div id="no-selection" class="empty-state">
+                        <i class="fas fa-arrow-left"></i>
+                        <h4>Ningún equipo seleccionado</h4>
+                        <p>Seleccione un equipo de la lista para gestionar sus catálogos vinculados</p>
+                    </div>
+
+                    <!-- Detalles del equipo seleccionado -->
+                    <div id="detalles-equipo" style="display: none;">
+                        <div class="details-panel">
+                            <div class="panel-header">
+                                <div class="panel-title">
+                                    <i class="fas fa-cog"></i>
+                                    <h3>Configuración para: <span id="nombre-equipo-tit"></span></h3>
+                                </div>
+                                <button id="btn-toggle-equipo" class="equipo-status active" onclick="toggleEquipoStatus()">
+                                    <i class="fas fa-power-off"></i> <span id="estado-equipo-text">ACTIVO</span>
+                                </button>
+                            </div>
+                            
+                            <!-- Tabs -->
+                            <div class="tabs-container">
+                                <button class="tab-link active" onclick="verTab('fallas', this)">
+                                    <i class="fas fa-exclamation-triangle"></i> Fallas
+                                </button>
+                                <button class="tab-link" onclick="verTab('soluciones', this)">
+                                    <i class="fas fa-check-circle"></i> Soluciones
+                                </button>
+                                <button class="tab-link" onclick="verTab('revisiones', this)">
+                                    <i class="fas fa-clipboard-check"></i> Revisiones
+                                </button>
+                                <button class="tab-link" onclick="verTab('elementos', this)">
+                                    <i class="fas fa-cubes"></i> Elementos
+                                </button>
+                                <button class="tab-link" onclick="verTab('accesorios', this)">
+                                    <i class="fas fa-tools"></i> Accesorios
+                                </button>
+                            </div>
+
+                            <!-- Tab: Fallas (tabla: falla_reportada) -->
+                            <div id="tab-fallas" class="tab-content">
+                                <ul id="lista-fallas" class="catalog-list"></ul>
+                                <button id="btn-nueva-falla" class="btn-add-inline" onclick="solicitarDato('falla_reportada')">
+                                    <i class="fas fa-plus-circle"></i> Nueva Falla
+                                </button>
+                            </div>
+                            
+                            <!-- Tab: Soluciones (tabla: solucion) -->
+                            <div id="tab-soluciones" class="tab-content" style="display:none;">
+                                <ul id="lista-soluciones" class="catalog-list"></ul>
+                                <button id="btn-nueva-solucion" class="btn-add-inline" onclick="solicitarDato('solucion')">
+                                    <i class="fas fa-plus-circle"></i> Nueva Solución
+                                </button>
+                            </div>
+
+                            <!-- Tab: Revisiones (tabla: detalle_revision) -->
+                            <div id="tab-revisiones" class="tab-content" style="display:none;">
+                                <ul id="lista-revisiones" class="catalog-list"></ul>
+                                <button id="btn-nueva-revision" class="btn-add-inline" onclick="solicitarDato('detalle_revision')">
+                                    <i class="fas fa-plus-circle"></i> Nueva Revisión
+                                </button>
+                            </div>
+
+                            <!-- Tab: Elementos (tabla: cat_elementos) -->
+                            <div id="tab-elementos" class="tab-content" style="display:none;">
+                                <ul id="lista-elementos" class="catalog-list"></ul>
+                                <button id="btn-nuevo-elemento" class="btn-add-inline" onclick="solicitarDato('cat_elementos')">
+                                    <i class="fas fa-plus-circle"></i> Nuevo Elemento
+                                </button>
+                            </div>
+
+                            <!-- Tab: Accesorios (tabla: accesorios) -->
+                            <div id="tab-accesorios" class="tab-content" style="display:none;">
+                                <ul id="lista-accesorios" class="catalog-list"></ul>
+                                <button id="btn-nuevo-accesorio" class="btn-add-inline" onclick="solicitarDato('accesorios')">
+                                    <i class="fas fa-plus-circle"></i> Nuevo Accesorio
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- SECCIÓN EMPRESAS -->
+            <div id="seccion-empresas" class="details-panel" style="display: none;">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-building"></i>
+                        <h3>Directorio de Empresas Clientes</h3>
+                    </div>
+                </div>
+                <ul id="lista-empresas" class="catalog-list"></ul>
+                <button id="btn-registrar-empresa" class="btn-add-inline" onclick="solicitarDato('empresas')">
+                    <i class="fas fa-plus-circle"></i> Registrar Empresa
+                </button>
+            </div>
+
+            <!-- SECCIÓN ESPECIALIDADES -->
+            <div id="seccion-especialidades" class="details-panel" style="display: none;">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <i class="fas fa-star"></i>
+                        <h3>Catálogo de Especialidades</h3>
+                    </div>
+                </div>
+                <ul id="lista-especialidades" class="catalog-list"></ul>
+                <button id="btn-registrar-especialidad" class="btn-add-inline" onclick="solicitarDato('especialidad')">
+                    <i class="fas fa-plus-circle"></i> Registrar Especialidad
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para registro -->
+    <div id="modal-catalogo" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-plus-circle"></i> <span id="modal-titulo">Nuevo Registro</span></h3>
+                <button class="modal-close" onclick="cerrarModal()"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <div class="form-group">
+                <label id="modal-label">Nombre</label>
+                <input type="text" id="modal-input" class="form-control" placeholder="Escriba aquí..." autocomplete="off">
+            </div>
+
+            <div id="grupo-especialidad" style="display:none;">
+                <div class="form-group">
+                    <label>Asignar Especialidad</label>
+                    <select id="modal-select-especialidad" class="form-control">
+                        <option value="">-- Seleccione Especialidad --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="cerrarModal()">Cancelar</button>
+                <button class="btn-save" id="btn-confirmar-modal">Guardar Registro</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5000/api";
+        let equipoSeleccionadoId = null;
+        let vistaActual = 'equipos';
+        let tablaActualGlobal = "";
+        let isSupervisor = false;  // Control de permisos
+
+        // ========== FUNCIONES COMUNES ==========
+        function mostrarInfoUsuario() {
+            const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
+            document.getElementById('display-user-name').textContent = sesion.nombre || 'Usuario';
+            document.getElementById('display-user-role').textContent = (sesion.rol || 'Rol').toUpperCase();
+            if (sesion.rol === 'supervisor') {
+                isSupervisor = true;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('sesion');
+            window.location.href = 'login.html';
+        }
+
+        function ajustarMenuPorRol() {
+            const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
+            const rol = sesion.rol;
+            if (rol === 'emp_admin') {
+                const ocultar = [
+                    'menu-crear-ticket',
+                    'menu-registro-usuarios',
+                    'menu-clientes',
+                    'menu-tecnicos',
+                    'menu-catalogos'
+                ];
+                ocultar.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+            }
+        }
+
+        // ========== NAVEGACIÓN ==========
+        function alternarVista(modo, btn) {
+            vistaActual = modo;
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('seccion-equipos').style.display = modo === 'equipos' ? 'grid' : 'none';
+            document.getElementById('seccion-empresas').style.display = modo === 'empresas' ? 'block' : 'none';
+            document.getElementById('seccion-especialidades').style.display = modo === 'especialidades' ? 'block' : 'none';
+            if (modo === 'empresas') cargarEmpresasMaster();
+            if (modo === 'especialidades') cargarEspecialidadesMaster();
+        }
+
+        function verTab(tabName, btn) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+            document.querySelectorAll('.tab-link').forEach(link => link.classList.remove('active'));
+            document.getElementById(`tab-${tabName}`).style.display = 'block';
+            btn.classList.add('active');
+        }
+
+        // ========== CARGA DE DATOS ==========
+        async function cargarEquiposMaestros() {
+            const select = document.getElementById('master-equipo');
+            try {
+                const responseTodos = await fetch(`${API_URL}/catalogos/equipos`);
+                const dataTodos = await responseTodos.json();
+                let equiposTodos = Array.isArray(dataTodos) ? dataTodos : (dataTodos.data || []);
+
+                const responseEsp = await fetch(`${API_URL}/catalogos/equipos-con-especialidades`);
+                const dataEsp = await responseEsp.json();
+                let equiposConEsp = Array.isArray(dataEsp) ? dataEsp : (dataEsp.data || []);
+
+                const especialidadMap = {};
+                equiposConEsp.forEach(e => { especialidadMap[e.id] = e.especialidad || 'Sin esp.'; });
+
+                const equiposCombinados = equiposTodos.map(eq => {
+                    const id = eq.id;
+                    const nombre = eq.nombre || eq.equipo || 'Desconocido';
+                    const especialidad = especialidadMap[id] || 'Sin esp.';
+                    const activo = eq.activo !== false;
+                    return { id, equipo: nombre, especialidad, activo };
+                });
+
+                if (equiposCombinados.length === 0) {
+                    select.innerHTML = '<option value="">-- No hay equipos registrados --</option>';
+                    return;
+                }
+
+                select.innerHTML = '<option value="">-- Seleccione un equipo --</option>' + 
+                    equiposCombinados.map(eq => 
+                        `<option value="${eq.id}" data-activo="${eq.activo}">${eq.equipo} (${eq.especialidad})</option>`
+                    ).join('');
+            } catch (error) {
+                console.error('Error cargando equipos:', error);
+                select.innerHTML = '<option value="">-- Error al cargar equipos --</option>';
+                mostrarNotificacion('Error al cargar equipos', 'error');
+            }
+        }
+
+        async function cargarEmpresasMaster() {
+            const listaUI = document.getElementById('lista-empresas');
+            try {
+                const response = await fetch(`${API_URL}/catalogos/empresas`);
+                const data = await response.json();
+                const empresas = Array.isArray(data) ? data : (data.data || []);
+                renderizarLista(empresas, listaUI, 'empresas');
+            } catch (error) {
+                console.error('Error cargando empresas:', error);
+                listaUI.innerHTML = '<li style="color:#999; padding:15px; text-align:center;">Error al cargar</li>';
+            }
+        }
+
+        async function cargarEspecialidadesMaster() {
+            const listaUI = document.getElementById('lista-especialidades');
+            try {
+                const response = await fetch(`${API_URL}/catalogos/especialidades`);
+                const data = await response.json();
+                const especialidades = Array.isArray(data) ? data : (data.data || []);
+                renderizarLista(especialidades, listaUI, 'especialidad');
+            } catch (error) {
+                console.error('Error cargando especialidades:', error);
+                listaUI.innerHTML = '<li style="color:#999; padding:15px; text-align:center;">Error al cargar</li>';
+            }
+        }
+
+        async function cargarEspecialidadesEnSelect() {
+            try {
+                const response = await fetch(`${API_URL}/catalogos/especialidades`);
+                const data = await response.json();
+                const especialidades = Array.isArray(data) ? data : (data.data || []);
+                const select = document.getElementById('modal-select-especialidad');
+                select.innerHTML = '<option value="">-- Seleccione Especialidad --</option>';
+                especialidades.filter(e => e.activo !== false).forEach(esp => {
+                    select.innerHTML += `<option value="${esp.id}">${esp.nombre || esp.especialidad}</option>`;
+                });
+            } catch (error) {
+                console.error('Error cargando especialidades:', error);
+            }
+        }
+
+        async function cargarDetallesEquipo(id) {
+            const panel = document.getElementById('detalles-equipo');
+            const empty = document.getElementById('no-selection');
+            const select = document.getElementById('master-equipo');
+            
+            if (!id) {
+                panel.style.display = 'none';
+                empty.style.display = 'flex';
+                equipoSeleccionadoId = null;
+                return;
+            }
+
+            equipoSeleccionadoId = id;
+            panel.style.display = 'block';
+            empty.style.display = 'none';
+
+            const opcion = select.options[select.selectedIndex];
+            document.getElementById('nombre-equipo-tit').textContent = opcion.text.split(' (')[0];
+
+            const activo = opcion.dataset.activo === 'true';
+            const btn = document.getElementById('btn-toggle-equipo');
+            btn.className = `equipo-status ${activo ? 'active' : 'inactive'}`;
+            document.getElementById('estado-equipo-text').textContent = activo ? 'ACTIVO' : 'INACTIVO';
+
+            await Promise.all([
+                cargarSubLista('falla_reportada', 'lista-fallas'),
+                cargarSubLista('solucion', 'lista-soluciones'),
+                cargarSubLista('detalle_revision', 'lista-revisiones'),
+                cargarSubLista('cat_elementos', 'lista-elementos'),
+                cargarSubLista('accesorios', 'lista-accesorios')
+            ]);
+        }
+
+        async function cargarSubLista(tabla, elementId) {
+            const ui = document.getElementById(elementId);
+            if (!ui) return;
+            try {
+                const response = await fetch(`${API_URL}/catalogos/${tabla}`);
+                const data = await response.json();
+                let datos = Array.isArray(data) ? data : (data.data || []);
+                let items = [];
+                if (equipoSeleccionadoId) {
+                    items = datos.filter(item => {
+                        const idEquipo = item.id_equipo || item.equipo_id || item.idEquipo;
+                        if (!idEquipo) return false;
+                        return parseInt(idEquipo) === parseInt(equipoSeleccionadoId);
+                    });
+                } else {
+                    items = datos;
+                }
+                renderizarLista(items, ui, tabla);
+            } catch (error) {
+                console.error(`Error cargando ${tabla}:`, error);
+                ui.innerHTML = '<li style="color:#999; padding:15px; text-align:center;">Error al cargar</li>';
+            }
+        }
+
+        function renderizarLista(datos, contenedor, tabla) {
+            if (!datos || datos.length === 0) {
+                contenedor.innerHTML = '<li style="color:#999; padding:20px; text-align:center; justify-content:center;"><i class="fas fa-folder-open" style="margin-right:8px;"></i> Sin registros</li>';
+                return;
+            }
+
+            const getIcon = (tabla) => {
+                const icons = {
+                    'falla_reportada': 'fa-exclamation-triangle',
+                    'solucion': 'fa-check-circle',
+                    'detalle_revision': 'fa-clipboard-check',
+                    'cat_elementos': 'fa-cubes',
+                    'accesorios': 'fa-tools',
+                    'empresas': 'fa-building',
+                    'especialidad': 'fa-star'
+                };
+                return icons[tabla] || 'fa-circle';
+            };
+
+            const getNombre = (item, tabla) => {
+                switch(tabla) {
+                    case 'falla_reportada': return item.falla || 'N/A';
+                    case 'solucion': return item.solucion || 'N/A';
+                    case 'detalle_revision': return item.descripcion || 'N/A';
+                    case 'cat_elementos': return item.elemento || 'N/A';
+                    case 'accesorios': return item.accesorio || 'N/A';
+                    case 'empresas': return item.empresa || item.nombre || 'N/A';
+                    case 'especialidad': return item.especialidad || item.nombre || 'N/A';
+                    default: return item.nombre || 'N/A';
+                }
+            };
+
+            contenedor.innerHTML = datos.map(item => {
+                const activo = item.activo !== false;
+                const nombre = getNombre(item, tabla);
+                
+                // Mostrar acciones solo si NO es supervisor
+                let accionesHtml = '';
+                if (!isSupervisor) {
+                    accionesHtml = `
+                        <div class="item-actions">
+                            <button class="toggle-btn ${activo ? 'active' : 'inactive'}" onclick="cambiarEstadoItem('${tabla}', ${item.id}, ${activo})" title="${activo ? 'Desactivar' : 'Activar'}">
+                                <i class="fas ${activo ? 'fa-toggle-on' : 'fa-toggle-off'}"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <li>
+                        <div class="item-info">
+                            <span class="item-icon"><i class="fas ${getIcon(tabla)}"></i></span>
+                            <span class="item-name ${!activo ? 'inactive' : ''}">${nombre}</span>
+                        </div>
+                        ${accionesHtml}
+                    </li>
+                `;
+            }).join('');
+        }
+
+        // ========== CAMBIAR ESTADO (ACTIVAR/DESACTIVAR) ==========
+        async function cambiarEstadoItem(tabla, id, estadoActual) {
+            if (isSupervisor) {
+                mostrarNotificacion('No tiene permisos para realizar esta acción', 'error');
+                return;
+            }
+            try {
+                const response = await fetch(`${API_URL}/catalogos/${tabla}/${id}/toggle`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    mostrarNotificacion(result.message, 'success');
+                    if (tabla === 'empresas') {
+                        await cargarEmpresasMaster();
+                    } else if (tabla === 'especialidad') {
+                        await cargarEspecialidadesMaster();
+                    } else if (tabla === 'equipo') {
+                        const select = document.getElementById('master-equipo');
+                        const option = select.querySelector(`option[value="${id}"]`);
+                        if (option) {
+                            option.dataset.activo = (!estadoActual).toString();
+                            if (equipoSeleccionadoId == id) {
+                                const btn = document.getElementById('btn-toggle-equipo');
+                                btn.className = `equipo-status ${!estadoActual ? 'active' : 'inactive'}`;
+                                document.getElementById('estado-equipo-text').textContent = !estadoActual ? 'ACTIVO' : 'INACTIVO';
+                            }
+                        }
+                    } else {
+                        if (equipoSeleccionadoId) {
+                            const mapTablaToLista = {
+                                'falla_reportada': 'lista-fallas',
+                                'solucion': 'lista-soluciones',
+                                'detalle_revision': 'lista-revisiones',
+                                'cat_elementos': 'lista-elementos',
+                                'accesorios': 'lista-accesorios'
+                            };
+                            if (mapTablaToLista[tabla]) {
+                                await cargarSubLista(tabla, mapTablaToLista[tabla]);
+                            }
+                        }
+                    }
+                } else {
+                    const error = await response.json();
+                    mostrarNotificacion(error.message || 'Error al cambiar estado', 'error');
+                }
+            } catch (error) {
+                console.error('Error cambiando estado:', error);
+                mostrarNotificacion('Error de conexión', 'error');
+            }
+        }
+
+        function toggleEquipoStatus() {
+            if (equipoSeleccionadoId && !isSupervisor) {
+                const btn = document.getElementById('btn-toggle-equipo');
+                const esActivo = btn.classList.contains('active');
+                cambiarEstadoItem('equipo', equipoSeleccionadoId, esActivo);
+            }
+        }
+
+        // ========== MODAL PARA REGISTRO ==========
+        function abrirModalRegistro(tabla, titulo, label) {
+            if (isSupervisor) {
+                mostrarNotificacion('No tiene permisos para agregar registros', 'error');
+                return;
+            }
+            tablaActualGlobal = tabla;
+            document.getElementById('modal-titulo').innerText = titulo;
+            document.getElementById('modal-label').innerText = label;
+            document.getElementById('modal-input').value = "";
+            const grupoEsp = document.getElementById('grupo-especialidad');
+            if (tabla === 'equipo') {
+                grupoEsp.style.display = 'block';
+                cargarEspecialidadesEnSelect();
+            } else {
+                grupoEsp.style.display = 'none';
+            }
+            document.getElementById('modal-catalogo').style.display = 'flex';
+            document.getElementById('modal-input').focus();
+            document.getElementById('btn-confirmar-modal').onclick = ejecutarRegistroModal;
+        }
+
+        function abrirModalNuevoEquipo() {
+            abrirModalRegistro('equipo', 'Registrar Equipo Base', 'Nombre del Equipo');
+        }
+
+        function solicitarDato(tabla) {
+            const titulos = {
+                'empresas': 'Registrar Empresa',
+                'falla_reportada': 'Nueva Falla',
+                'solucion': 'Nueva Solución',
+                'detalle_revision': 'Nueva Revisión',
+                'cat_elementos': 'Nuevo Componente',
+                'accesorios': 'Nuevo Accesorio',
+                'especialidad': 'Nueva Especialidad'
+            };
+            if (tabla !== 'empresas' && tabla !== 'especialidad' && !equipoSeleccionadoId && vistaActual === 'equipos') {
+                mostrarNotificacion('Primero debe seleccionar un equipo', 'error');
+                return;
+            }
+            abrirModalRegistro(tabla, titulos[tabla] || 'Nuevo Registro', 'Nombre del elemento');
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-catalogo').style.display = 'none';
+        }
+
+        async function ejecutarRegistroModal() {
+            const nombre = document.getElementById('modal-input').value.trim();
+            if (!nombre) {
+                mostrarNotificacion('El nombre es requerido', 'error');
+                return;
+            }
+            const payload = { nombre: nombre };
+            if (tablaActualGlobal === 'equipo') {
+                const idEsp = document.getElementById('modal-select-especialidad').value;
+                if (!idEsp) {
+                    mostrarNotificacion('Debe seleccionar una especialidad para el equipo', 'error');
+                    return;
+                }
+                payload.id_especialidad = idEsp;
+            } else if (tablaActualGlobal !== 'empresas' && tablaActualGlobal !== 'especialidad') {
+                if (!equipoSeleccionadoId) {
+                    mostrarNotificacion('Error: No hay equipo seleccionado', 'error');
+                    return;
+                }
+                payload.id_equipo = equipoSeleccionadoId;
+            }
+            try {
+                const response = await fetch(`${API_URL}/catalogos/${tablaActualGlobal}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) {
+                    mostrarNotificacion('Registro guardado exitosamente', 'success');
+                    cerrarModal();
+                    if (tablaActualGlobal === 'equipo') {
+                        await cargarEquiposMaestros();
+                    } else if (tablaActualGlobal === 'empresas') {
+                        await cargarEmpresasMaster();
+                    } else if (tablaActualGlobal === 'especialidad') {
+                        await cargarEspecialidadesMaster();
+                    } else if (equipoSeleccionadoId) {
+                        const mapTablaToLista = {
+                            'falla_reportada': 'lista-fallas',
+                            'solucion': 'lista-soluciones',
+                            'detalle_revision': 'lista-revisiones',
+                            'cat_elementos': 'lista-elementos',
+                            'accesorios': 'lista-accesorios'
+                        };
+                        if (mapTablaToLista[tablaActualGlobal]) {
+                            await cargarSubLista(tablaActualGlobal, mapTablaToLista[tablaActualGlobal]);
+                        }
+                    }
+                } else {
+                    const errorData = await response.json();
+                    mostrarNotificacion(errorData.message || 'Error al guardar', 'error');
+                }
+            } catch (error) {
+                console.error('Error en registro:', error);
+                mostrarNotificacion('Error de conexión', 'error');
+            }
+        }
+
+        // ========== NOTIFICACIONES ==========
+        function mostrarNotificacion(mensaje, tipo) {
+            const notificacion = document.createElement('div');
+            notificacion.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                background: ${tipo === 'success' ? '#10b981' : '#ef4444'};
+                color: white;
+                border-radius: 12px;
+                font-weight: 500;
+                z-index: 9999;
+                box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                animation: slideIn 0.3s ease;
+            `;
+            notificacion.innerHTML = `<i class="fas ${tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${mensaje}`;
+            document.body.appendChild(notificacion);
+            setTimeout(() => {
+                if (notificacion.parentNode) {
+                    notificacion.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => notificacion.remove(), 300);
+                }
+            }, 3000);
+        }
+
+        // Estilos para animaciones
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // ========== INICIALIZACIÓN ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            mostrarInfoUsuario();
+            ajustarMenuPorRol();
+            document.getElementById('btn-logout').addEventListener('click', logout);
+
+            cargarEquiposMaestros();
+            cargarEmpresasMaster();
+            cargarEspecialidadesMaster();
+
+            // Si es supervisor, ocultar todos los botones de acción
+            if (isSupervisor) {
+                // Ocultar botón "Registrar Equipo Nuevo"
+                const btnRegEquipo = document.getElementById('btn-registrar-equipo');
+                if (btnRegEquipo) btnRegEquipo.style.display = 'none';
+                
+                // Ocultar botones de nueva falla, solución, etc.
+                const botonesNuevo = [
+                    'btn-nueva-falla', 'btn-nueva-solucion', 'btn-nueva-revision',
+                    'btn-nuevo-elemento', 'btn-nuevo-accesorio',
+                    'btn-registrar-empresa', 'btn-registrar-especialidad'
+                ];
+                botonesNuevo.forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) btn.style.display = 'none';
+                });
+                
+                // Ocultar el botón de toggle de estado del equipo
+                const btnToggleEquipo = document.getElementById('btn-toggle-equipo');
+                if (btnToggleEquipo) btnToggleEquipo.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

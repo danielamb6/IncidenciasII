@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Incidencias</title>
+    
+    <script>
+        if (!localStorage.getItem('sesion')) {
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* Estilos específicos para incidencias */
+        .filtros-incidencias {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filtro-input {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            min-width: 250px;
+            transition: all 0.2s;
+            flex: 1;
+        }
+        .filtro-input:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(171, 9, 106, 0.1);
+        }
+        .btn-refrescar {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-refrescar:hover {
+            background: #8A0755;
+            transform: translateY(-2px);
+        }
+        .evidencia-thumb {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 2px solid transparent;
+        }
+        .evidencia-thumb:hover {
+            transform: scale(1.1);
+            border-color: var(--accent-color);
+            box-shadow: 0 4px 12px rgba(171, 9, 106, 0.3);
+        }
+        .sin-evidencia {
+            width: 50px;
+            height: 50px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #94a3b8;
+            font-size: 1.2rem;
+        }
+        .tecnico-info {
+            display: flex;
+            flex-direction: column;
+        }
+        .tecnico-nombre {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .fecha-atencion {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+        .folio-badge {
+            background: #eef2ff;
+            color: var(--primary-blue);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-block;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            padding-top: 50px;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+        }
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 12px;
+        }
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .close-modal:hover {
+            color: var(--accent-color);
+        }
+
+        /* Estilos para el selector de estado */
+        .estado-select {
+            padding: 6px 10px;
+            border-radius: 20px;
+            border: 2px solid transparent;
+            font-weight: 600;
+            font-size: 0.85rem;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+            width: 140px;
+            background-color: white;
+        }
+        .estado-select option {
+            background: white;
+            color: #1e293b;
+        }
+        .estado-select.estado-abierto { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+        .estado-select.estado-proceso { background: #fef9c3; color: #854d0e; border-color: #fde047; }
+        .estado-select.estado-espera { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
+        .estado-select.estado-resuelto { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+        .estado-select:hover { filter: brightness(0.95); transform: translateY(-1px); }
+        .estado-select:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Estilo para ocultar áreas antes de buscar */
+        .hidden { display: none !important; }
+
+        /* Mensaje inicial antes de buscar */
+        .mensaje-inicial {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 50px 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+            margin-top: 20px;
+        }
+        .mensaje-inicial i {
+            font-size: 4rem;
+            color: #94a3b8;
+            margin-bottom: 15px;
+        }
+        .mensaje-inicial h2 {
+            color: #334155;
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        .mensaje-inicial p {
+            color: #64748b;
+            font-size: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo-container">
+            <div class="logo-placeholder" id="logo-placeholder">
+                <i class="fas fa-tools"></i>
+            </div>
+            <img src="logo sin fondo.png" alt="Logo del Sistema" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
+            <div class="logo-text">
+                <h1>Sistema de <span>Incidencias</span></h1>
+                <div class="subtitle">Panel de Administración</div>
+            </div>
+        </div>
+
+        <div class="top-user-info">
+            <div class="user-details">
+                <span class="user-name" id="display-user-name">Cargando...</span>
+                <small class="user-role" id="display-user-role">...</small>
+            </div>
+            <button id="btn-logout">
+                <i class="fas fa-power-off"></i> Salir
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo-sidebar">
+                <h2>Admin<span>Incidencias</span></h2>
+                <p>Sistema de Gestión</p>
+            </div>
+            <ul class="menu" id="sidebar-menu">
+                <li class="menu-item" id="menu-dashboard">
+                    <a href="index.html" class="menu-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-reportes">
+                    <a href="reportes.html" class="menu-link">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Reportes</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-crear-ticket">
+                    <a href="crear-ticket.html" class="menu-link">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Crear Ticket</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-registro-usuarios">
+                    <a href="registro_usuario.html" class="menu-link">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Registro Usuarios</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-incidencias">
+                    <a href="incidencias.html" class="menu-link active">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Incidencias</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-clientes">
+                    <a href="clientes.html" class="menu-link">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-tecnicos">
+                    <a href="tecnicos.html" class="menu-link">
+                        <i class="fas fa-users-cog"></i>
+                        <span>Técnicos</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-catalogos">
+                    <a href="catalogos.html" class="menu-link">
+                        <i class="fas fa-book"></i>
+                        <span>Catálogos</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div id="view-incidencias">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h1 class="page-title"><i class="fas fa-tasks"></i> Gestión de Fichas Técnicas</h1>
+                </div>
+                
+                <div class="filtros-incidencias">
+                    <input type="date" id="filtro-fecha-inicio" class="filtro-input" title="Fecha Inicio">
+                    <input type="date" id="filtro-fecha-fin" class="filtro-input" title="Fecha Fin">
+                    
+                    <input type="text" id="filtro-empresa" class="filtro-input" placeholder="🔍 Filtrar por empresa...">
+                    <input type="text" id="filtro-tecnico" class="filtro-input" placeholder="👤 Filtrar por técnico...">
+                    <select id="filtro-estado" class="filtro-input">
+                        <option value="">Todos los estados</option>
+                        <option value="ABIERTO">Abierto</option>
+                        <option value="EN PROCESO">En Atención</option>
+                        <option value="ESPERA REFACCION">Espera Refacción</option>
+                        <option value="RESUELTO">Resuelto</option>
+                    </select>
+                    <button id="btn-refrescar" class="btn-refrescar">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                </div>
+
+                <div id="mensaje-busqueda" class="mensaje-inicial">
+                    <i class="fas fa-search"></i>
+                    <h2>Listo para buscar</h2>
+                    <p>Ajuste los filtros arriba y haga clic en "Buscar" para visualizar las incidencias.</p>
+                </div>
+                
+                <div id="resultados-busqueda" class="hidden">
+                    <div class="data-summary">
+                        <div class="summary-card">
+                            <i class="fas fa-clipboard-list"></i>
+                            <h3 id="total-incidencias">0</h3>
+                            <p>Total Incidencias</p>
+                        </div>
+                        <div class="summary-card">
+                            <i class="fas fa-clock"></i>
+                            <h3 id="pendientes-count">0</h3>
+                            <p>Pendientes</p>
+                        </div>
+                        <div class="summary-card">
+                            <i class="fas fa-check-circle"></i>
+                            <h3 id="resueltas-count">0</h3>
+                            <p>Resueltas</p>
+                        </div>
+                        <div class="summary-card">
+                            <i class="fas fa-users"></i>
+                            <h3 id="tecnicos-count">0</h3>
+                            <p>Técnicos Asignados</p>
+                        </div>
+                    </div>
+                    
+                    <div class="table-preview">
+                        <h2><i class="fas fa-list"></i> Incidencias</h2>
+                        <div style="overflow-x: auto;">
+                             <table>
+                                <thead>
+                                     <tr>
+                                        <th>Folio</th>
+                                        <th>Empresa</th>
+                                        <th>Técnico</th>
+                                        <th>Equipo / Falla</th>
+                                        <th>Solución</th>
+                                        <th>Estado</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Evidencia</th>
+                                     </tr>
+                                </thead>
+                                <tbody id="incidencias-body">
+                                </tbody>
+                             </table>
+                        </div>
+                    </div>
+                </div> 
+            </div>
+        </main>
+    </div>
+    
+    <div id="modal-imagen" class="modal">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="imagen-ampliada">
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5000/api";
+        let datosIncidencias = [];
+        let userRole = null; // Variable para almacenar el rol del usuario
+
+        function mostrarInfoUsuario() {
+            const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
+            document.getElementById('display-user-name').textContent = sesion.nombre || 'Usuario';
+            document.getElementById('display-user-role').textContent = (sesion.rol || 'Rol').toUpperCase();
+            userRole = sesion.rol; // Guardamos el rol para usarlo en permisos
+        }
+
+        function logout() {
+            localStorage.removeItem('sesion');
+            window.location.href = 'login.html';
+        }
+
+        function ajustarMenuPorRol() {
+            const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
+            const rol = sesion.rol;
+            if (rol === 'emp_admin') {
+                const ocultar = [
+                    'menu-crear-ticket', 'menu-registro-usuarios',
+                    'menu-clientes', 'menu-tecnicos', 'menu-catalogos'
+                ];
+                ocultar.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+            }
+        }
+
+        function getHeaders() {
+            const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
+            return {
+                'X-User-Rol': sesion.rol || '',
+                'X-User-Empresa': sesion.id_empresa || '',
+                'Content-Type': 'application/json'
+            };
+        }
+
+        // Función para actualizar el estado vía API (solo para super_admin)
+        async function actualizarEstado(fichaId, nuevoEstado, selectElement) {
+            // Solo el super_admin puede cambiar estados
+            if (userRole !== 'super_admin') {
+                mostrarNotificacion('No tiene permisos para cambiar el estado', 'error');
+                selectElement.disabled = false;
+                return;
+            }
+            selectElement.disabled = true;
+            const valorOriginal = selectElement.value;
+
+            try {
+                const response = await fetch(`${API_URL}/fichas/${fichaId}/estado`, {
+                    method: 'PUT',
+                    headers: getHeaders(),
+                    body: JSON.stringify({ estado: nuevoEstado })
+                });
+
+                const result = await response.json();
+
+                if (result.status === 'success') {
+                    actualizarClaseSelect(selectElement, nuevoEstado);
+                    
+                    // Actualizar el estado en el array global para que los filtros sigan funcionando
+                    const incIndex = datosIncidencias.findIndex(i => i.id === fichaId);
+                    if(incIndex !== -1) {
+                        datosIncidencias[incIndex].estado = nuevoEstado;
+                        actualizarEstadisticas(datosIncidencias); // Refrescar KPIs
+                    }
+                    mostrarNotificacion('Estado actualizado correctamente', 'success');
+                } else {
+                    throw new Error(result.message || 'Error al actualizar el estado');
+                }
+            } catch (error) {
+                console.error('❌ Error al cambiar estado:', error);
+                mostrarNotificacion('No se pudo actualizar el estado. Intente nuevamente.', 'error');
+                selectElement.value = valorOriginal;
+                actualizarClaseSelect(selectElement, valorOriginal);
+            } finally {
+                selectElement.disabled = false;
+            }
+        }
+
+        function actualizarClaseSelect(select, estado) {
+            select.classList.remove('estado-abierto', 'estado-proceso', 'estado-espera', 'estado-resuelto');
+            if (estado === 'ABIERTO') select.classList.add('estado-abierto');
+            else if (estado === 'EN PROCESO' || estado === 'EN ATENCION' || estado === 'EN ATENCIÓN') select.classList.add('estado-proceso');
+            else if (estado === 'ESPERA_REFACCION' || estado === 'ESPERA REFACCION') select.classList.add('estado-espera');
+            else if (estado === 'RESUELTO') select.classList.add('estado-resuelto');
+        }
+
+        async function cargarFichasTecnicas() {
+            // Ocultar mensaje inicial, mostrar área de resultados
+            document.getElementById('mensaje-busqueda').classList.add('hidden');
+            document.getElementById('resultados-busqueda').classList.remove('hidden');
+
+            const tbody = document.getElementById('incidencias-body');
+            if (!tbody) return;
+            
+            try {
+                tbody.innerHTML = `
+                     <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--accent-color);"></i>
+                            <p style="margin-top: 10px; color: var(--text-light);">Consultando base de datos...</p>
+                         </tr>
+                    </tr>
+                `;
+                const response = await fetch(`${API_URL}/fichas-completas`, { headers: getHeaders() });
+                const resultado = await response.json();
+                
+                if (resultado.status === "success") {
+                    datosIncidencias = resultado.data || [];
+                    filtrarTabla(); // Aplicar filtros (incluyendo fechas) a los datos descargados
+                } else {
+                    throw new Error(resultado.message || 'Error al cargar incidencias');
+                }
+            } catch (error) {
+                console.error('❌ Error cargando incidencias:', error);
+                tbody.innerHTML = `
+                     <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: var(--danger);">
+                            <i class="fas fa-exclamation-circle fa-2x"></i>
+                            <p style="margin-top: 10px;">Error de conexión. Verifica que el servidor Flask esté corriendo.</p>
+                         </tr>
+                    </tr>
+                `;
+            }
+        }
+
+        function renderizarTablaIncidencias(incidencias) {
+            const tbody = document.getElementById('incidencias-body');
+            tbody.innerHTML = ''; 
+
+            if (!incidencias || incidencias.length === 0) {
+                tbody.innerHTML = `
+                     <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: var(--text-light);">
+                            <i class="fas fa-search fa-2x"></i>
+                            <p style="margin-top: 10px;">No se encontraron incidencias que coincidan con los filtros aplicados.</p>
+                         </tr>
+                    </tr>
+                `;
+                return;
+            }
+
+            incidencias.forEach(inc => {
+                const tr = document.createElement('tr');
+
+                const tdFolio = document.createElement('td');
+                tdFolio.innerHTML = `<span class="folio-badge">${inc.ticket_cod || 'N/A'}</span>`;
+                tr.appendChild(tdFolio);
+
+                const tdEmpresa = document.createElement('td');
+                tdEmpresa.innerHTML = `<strong>${inc.empresa_nombre || 'Sin empresa'}</strong>`;
+                tr.appendChild(tdEmpresa);
+
+                // ✅ DESPUÉS:
+                const tdTecnico = document.createElement('td');
+                const fecha = inc.fecha_formateada || 'N/A';
+                tdTecnico.innerHTML = `
+                    <div class="tecnico-info">
+                        <span class="tecnico-nombre">${inc.tecnico || 'No asignado'}</span>
+                    </div>
+                `;
+                tr.appendChild(tdTecnico);
+
+                const tdEquipo = document.createElement('td');
+                tdEquipo.innerHTML = `<strong>${inc.equipo_nombre || 'N/A'}</strong><br><small style="color: var(--text-light);">${inc.falla_reportada || ''}</small>`;
+                tr.appendChild(tdEquipo);
+
+                const tdSolucion = document.createElement('td');
+                tdSolucion.innerHTML = `<small>${inc.detalle_solucion || 'Pendiente'}</small>`;
+                tr.appendChild(tdSolucion);
+
+                const tdEstado = document.createElement('td');
+                const select = document.createElement('select');
+                select.className = 'estado-select';
+                const estados = ['ABIERTO', 'EN PROCESO', 'ESPERA REFACCION', 'RESUELTO'];
+                
+                // Normalizar estado actual para que coincida con el array
+                let estadoActual = inc.estado || 'ABIERTO';
+                if(estadoActual === 'EN ATENCION' || estadoActual === 'EN ATENCIÓN') estadoActual = 'EN PROCESO';
+                if(estadoActual === 'ESPERA_REFACCION') estadoActual = 'ESPERA REFACCION';
+
+                estados.forEach(est => {
+                    const option = document.createElement('option');
+                    option.value = est;
+                    option.textContent = est === 'EN PROCESO' ? 'EN ATENCION' : est;
+                    if (est === estadoActual) option.selected = true;
+                    select.appendChild(option);
+                });
+                
+                actualizarClaseSelect(select, estadoActual);
+
+                // Solo super_admin puede editar el estado
+                const puedeEditar = (userRole === 'super_admin');
+                if (!puedeEditar) {
+                    select.disabled = true;
+                } else {
+                    select.addEventListener('change', function(e) {
+                        e.stopPropagation();
+                        const nuevoEstado = this.value;
+                        const textoEstado = nuevoEstado === 'EN PROCESO' ? 'EN ATENCION' : nuevoEstado;
+                        const confirmacion = confirm(`¿Cambiar estado a ${textoEstado}?`);
+                        if (confirmacion) {
+                            actualizarEstado(inc.id, nuevoEstado, this);
+                        } else {
+                            this.value = estadoActual;
+                            actualizarClaseSelect(this, estadoActual);
+                        }
+                    });
+                }
+
+                tdEstado.appendChild(select);
+                tr.appendChild(tdEstado);
+
+                const tdFecha = document.createElement('td');
+                tdFecha.innerHTML = `<span class="fecha-atencion"><i class="far fa-calendar-alt"></i> ${fecha}</span>`;
+                tr.appendChild(tdFecha);
+
+                const tdEvidencia = document.createElement('td');
+                if (inc.evidencia_url) {
+                    const img = document.createElement('img');
+                    img.src = inc.evidencia_url;
+                    img.className = 'evidencia-thumb';
+                    img.onclick = () => abrirModalImagen(inc.evidencia_url);
+                    tdEvidencia.appendChild(img);
+                } else {
+                    tdEvidencia.innerHTML = '<div class="sin-evidencia"><i class="fas fa-image"></i></div>';
+                }
+                tr.appendChild(tdEvidencia);
+
+                tbody.appendChild(tr);
+            });
+        }
+
+        function actualizarEstadisticas(incidencias) {
+            const total = incidencias.length;
+            const pendientes = incidencias.filter(i => {
+                const est = i.estado || '';
+                return est.includes('ABIERTO') || est.includes('PROCESO') || est.includes('ATENCION') || est.includes('ESPERA');
+            }).length;
+            const resueltas = incidencias.filter(i => (i.estado || '').includes('RESUELTO')).length;
+            const tecnicosSet = new Set(incidencias.map(i => i.tecnico).filter(Boolean));
+            
+            document.getElementById('total-incidencias').textContent = total;
+            document.getElementById('pendientes-count').textContent = pendientes;
+            document.getElementById('resueltas-count').textContent = resueltas;
+            document.getElementById('tecnicos-count').textContent = tecnicosSet.size;
+        }
+
+        function filtrarTabla() {
+            const fInicio = document.getElementById('filtro-fecha-inicio').value;
+            const fFin = document.getElementById('filtro-fecha-fin').value;
+            const filtroEmpresa = document.getElementById('filtro-empresa').value.toLowerCase();
+            const filtroTecnico = document.getElementById('filtro-tecnico').value.toLowerCase();
+            const filtroEstado = document.getElementById('filtro-estado').value;
+            
+            const filtradas = datosIncidencias.filter(inc => {
+                // 1. Filtro por Fecha
+                // 1. Filtro por Fecha
+                // ✅ DESPUÉS:
+                // 1. Filtro por Fecha (Alineado directo a la base de datos)
+                let pasaFiltroFecha = true;
+                if (fInicio || fFin) {
+                    if (!inc.fecha_pura) {
+                        pasaFiltroFecha = false;
+                    } else {
+                        if (fInicio && inc.fecha_pura < fInicio) pasaFiltroFecha = false;
+                        if (fFin && inc.fecha_pura > fFin) pasaFiltroFecha = false;
+                    }
+                }
+                // 2. Otros filtros
+                const empresa = (inc.empresa_nombre || '').toLowerCase();
+                const tecnico = (inc.tecnico || '').toLowerCase();
+                
+                let estadoActual = inc.estado || '';
+                if(estadoActual === 'EN ATENCION' || estadoActual === 'EN ATENCIÓN') estadoActual = 'EN PROCESO';
+                if(estadoActual === 'ESPERA_REFACCION') estadoActual = 'ESPERA REFACCION';
+
+                const pasaEmpresa = empresa.includes(filtroEmpresa);
+                const pasaTecnico = tecnico.includes(filtroTecnico);
+                const pasaEstado = !filtroEstado || estadoActual === filtroEstado;
+
+                return pasaFiltroFecha && pasaEmpresa && pasaTecnico && pasaEstado;
+            });
+            
+            actualizarEstadisticas(filtradas);
+            renderizarTablaIncidencias(filtradas);
+        }
+
+        function abrirModalImagen(url) {
+            document.getElementById('imagen-ampliada').src = url;
+            document.getElementById('modal-imagen').style.display = 'block';
+        }
+
+        function mostrarNotificacion(mensaje, tipo) {
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                border-radius: 8px;
+                color: white;
+                font-weight: 600;
+                z-index: 9999;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                background: ${tipo === 'success' ? '#10b981' : '#ef4444'};
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                animation: slideIn 0.3s ease;
+            `;
+            toast.innerHTML = `<i class="fas ${tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${mensaje}`;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            mostrarInfoUsuario();
+            ajustarMenuPorRol();
+            
+            // Asignar botón logout
+            document.getElementById('btn-logout').addEventListener('click', logout);
+            
+            // Solo el botón buscar dispara la carga
+            document.getElementById('btn-refrescar').addEventListener('click', cargarFichasTecnicas);
+            
+            // Los inputs ya no filtran al instante (se espera al botón buscar),
+            // pero podemos dejarlos si se desea que filtren datos *ya descargados*:
+            document.getElementById('filtro-empresa').addEventListener('input', filtrarTabla);
+            document.getElementById('filtro-tecnico').addEventListener('input', filtrarTabla);
+            document.getElementById('filtro-estado').addEventListener('change', filtrarTabla);
+            document.getElementById('filtro-fecha-inicio').addEventListener('change', filtrarTabla);
+            document.getElementById('filtro-fecha-fin').addEventListener('change', filtrarTabla);
+
+            // Funcionalidad Modal
+            document.querySelector('.close-modal').addEventListener('click', () => document.getElementById('modal-imagen').style.display = 'none');
+            window.addEventListener('click', e => { if (e.target == document.getElementById('modal-imagen')) document.getElementById('modal-imagen').style.display = 'none'; });
+        });
+    </script>
+</body>       
+</html>

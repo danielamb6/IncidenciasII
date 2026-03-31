@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Clientes</title>
+    
+    <script>
+        if (!localStorage.getItem('sesion')) {
+            window.location.href = "login.html";
+        }
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        .filtros-clientes {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filtro-input {
+            padding: 10px 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            min-width: 250px;
+            transition: all 0.2s;
+            flex: 1;
+        }
+        .filtro-input:focus {
+            border-color: var(--accent-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(171, 9, 106, 0.1);
+        }
+        .btn-refrescar {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-refrescar:hover {
+            background: #8A0755;
+            transform: translateY(-2px);
+        }
+        .badge-estado {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+        .badge-activo {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .badge-inactivo {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .btn-accion {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+        .btn-activar {
+            background: #10b981;
+            color: white;
+        }
+        .btn-activar:hover {
+            background: #059669;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        .btn-desactivar {
+            background: #ef4444;
+            color: white;
+        }
+        .btn-desactivar:hover {
+            background: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+        .telegram-badge {
+            background: #e8f0fe;
+            color: #2563eb;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .empresa-badge {
+            background: #f3f4f6;
+            color: #4b5563;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .folio-badge {
+            background: #eef2ff;
+            color: var(--primary-blue);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="logo-container">
+            <div class="logo-placeholder" id="logo-placeholder">
+                <i class="fas fa-tools"></i>
+            </div>
+            <img src="logo sin fondo.png" alt="Logo" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
+            <div class="logo-text">
+                <h1>Sistema de <span>Incidencias</span></h1>
+                <div class="subtitle">Gestión de Clientes</div>
+            </div>
+        </div>
+
+        <div class="top-user-info">
+            <div class="user-details">
+                <span class="user-name" id="display-user-name">Cargando...</span>
+                <small class="user-role" id="display-user-role">...</small>
+            </div>
+            <button id="btn-logout">
+                <i class="fas fa-power-off"></i> Salir
+            </button>
+        </div>
+    </div>
+
+    <div class="container">
+        <aside class="sidebar">
+            <div class="logo-sidebar">
+                <h2>Admin<span>Incidencias</span></h2>
+                <p>Sistema de Gestión</p>
+            </div>
+            <ul class="menu" id="sidebar-menu">
+                <li class="menu-item" id="menu-dashboard">
+                    <a href="index.html" class="menu-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-reportes">
+                    <a href="reportes.html" class="menu-link">
+                        <i class="fas fa-file-alt"></i>
+                        <span>Reportes</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-crear-ticket">
+                    <a href="crear-ticket.html" class="menu-link">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>Crear Ticket</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-registro-usuarios">
+                    <a href="registro_usuario.html" class="menu-link">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Registro Usuarios</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-incidencias">
+                    <a href="incidencias.html" class="menu-link">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Incidencias</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-clientes">
+                    <a href="clientes.html" class="menu-link active">
+                        <i class="fas fa-user-tie"></i>
+                        <span>Clientes</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-tecnicos">
+                    <a href="tecnicos.html" class="menu-link">
+                        <i class="fas fa-users-cog"></i>
+                        <span>Técnicos</span>
+                    </a>
+                </li>
+                <li class="menu-item" id="menu-catalogos">
+                    <a href="catalogos.html" class="menu-link">
+                        <i class="fas fa-book"></i>
+                        <span>Catálogos</span>
+                    </a>
+                </li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            <div id="view-clientes">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h1 class="page-title"><i class="fas fa-user-tie"></i> Gestión de Clientes</h1>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="data-summary">
+                    <div class="summary-card">
+                        <i class="fas fa-users"></i>
+                        <h3 id="total-clientes">0</h3>
+                        <p>Total Clientes</p>
+                    </div>
+                    <div class="summary-card">
+                        <i class="fas fa-user-check"></i>
+                        <h3 id="clientes-activos">0</h3>
+                        <p>Clientes Activos</p>
+                    </div>
+                    <div class="summary-card">
+                        <i class="fas fa-user-slash"></i>
+                        <h3 id="clientes-inactivos">0</h3>
+                        <p>Clientes Inactivos</p>
+                    </div>
+                    <div class="summary-card">
+                        <i class="fas fa-building"></i>
+                        <h3 id="total-empresas-cliente">0</h3>
+                        <p>Empresas</p>
+                    </div>
+                </div>
+                
+                <!-- Filtros -->
+                <div class="filtros-clientes">
+                    <input type="text" id="filtro-nombre" class="filtro-input" placeholder="🔍 Buscar por nombre...">
+                    <input type="text" id="filtro-empresa" class="filtro-input" placeholder="🏢 Filtrar por empresa...">
+                    <select id="filtro-estado-cliente" class="filtro-input">
+                        <option value="">Todos los estados</option>
+                        <option value="activo">Activos</option>
+                        <option value="inactivo">Inactivos</option>
+                    </select>
+                    <button id="btn-refrescar-clientes" class="btn-refrescar">
+                        <i class="fas fa-sync-alt"></i> Actualizar
+                    </button>
+                </div>
+                
+                <div class="table-preview">
+                    <h2><i class="fas fa-list"></i> Lista de Clientes</h2>
+                    <div style="overflow-x: auto;">
+                         <table>
+                            <thead>
+                                 <tr>
+                                    <th>ID</th>
+                                    <th>Telegram</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Empresa Asociada</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                 </tr>
+                            </thead>
+                            <tbody id="clientes-list-body">
+                                 <tr>
+                                    <td colspan="6" style="text-align: center; padding: 40px;">
+                                        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--accent-color);"></i>
+                                        <p style="margin-top: 10px; color: var(--text-light);">Cargando clientes desde Neon...</p>
+                                     </tr>
+                                 </tr>
+                            </tbody>
+                         </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5000/api";
+        let clientesData = [];
+        let isSupervisor = false;  // Control de permisos
+
+        function mostrarInfoUsuario() {
+            const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
+            document.getElementById('display-user-name').textContent = sesion.nombre || 'Usuario';
+            document.getElementById('display-user-role').textContent = (sesion.rol || 'Rol').toUpperCase();
+            // Detectar si el usuario es supervisor
+            if (sesion.rol === 'supervisor') {
+                isSupervisor = true;
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('sesion');
+            window.location.href = 'login.html';
+        }
+
+        function ajustarMenuPorRol() {
+            const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
+            const rol = sesion.rol;
+            if (rol === 'emp_admin') {
+                const ocultar = [
+                    'menu-crear-ticket',
+                    'menu-registro-usuarios',
+                    'menu-clientes',
+                    'menu-tecnicos',
+                    'menu-catalogos'
+                ];
+                ocultar.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.style.display = 'none';
+                });
+            }
+        }
+
+        async function cargarClientesDesdeBD() {
+            const tbody = document.getElementById('clientes-list-body');
+            if (!tbody) return;
+            try {
+                tbody.innerHTML = `
+                     <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px;">
+                            <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--accent-color);"></i>
+                            <p style="margin-top: 10px; color: var(--text-light);">Cargando clientes desde Neon...</p>
+                         </tr>
+                     </tr>
+                `;
+                const response = await fetch(`${API_URL}/clientes-detallados`);
+                const resultado = await response.json();
+                if (resultado.status === "success") {
+                    clientesData = resultado.data || [];
+                    actualizarEstadisticas(clientesData);
+                    renderizarTablaClientes(clientesData);
+                } else {
+                    throw new Error(resultado.message || 'Error al cargar clientes');
+                }
+            } catch (error) {
+                console.error('❌ Error cargando clientes:', error);
+                tbody.innerHTML = `
+                     <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: var(--danger);">
+                            <i class="fas fa-exclamation-circle fa-2x"></i>
+                            <p style="margin-top: 10px;">Error al cargar los clientes: ${error.message}</p>
+                            <button onclick="cargarClientesDesdeBD()" style="margin-top: 15px; padding: 8px 20px; background: var(--accent-color); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                                <i class="fas fa-sync-alt"></i> Reintentar
+                            </button>
+                         </tr>
+                     </tr>
+                `;
+            }
+        }
+
+        function renderizarTablaClientes(clientes) {
+            const tbody = document.getElementById('clientes-list-body');
+            if (!clientes || clientes.length === 0) {
+                tbody.innerHTML = `
+                     <tr>
+                        <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-light);">
+                            <i class="fas fa-user-slash fa-2x"></i>
+                            <p style="margin-top: 10px;">No hay clientes registrados</p>
+                         </tr>
+                     </tr>
+                `;
+                return;
+            }
+            tbody.innerHTML = clientes.map(cliente => {
+                const nombreCompleto = `${cliente.nombre || ''} ${cliente.primer_apellido || ''} ${cliente.segundo_apellido || ''}`.trim();
+                const empresa = cliente.nombre_empresa || 'Sin empresa';
+                const estado = cliente.activo ? 'ACTIVO' : 'INACTIVO';
+                const estadoClass = cliente.activo ? 'badge-activo' : 'badge-inactivo';
+                const botonClass = cliente.activo ? 'btn-desactivar' : 'btn-activar';
+                const botonTexto = cliente.activo ? 'Desactivar' : 'Activar';
+                const botonIcono = cliente.activo ? 'fa-ban' : 'fa-check-circle';
+
+                let accionesHtml = '';
+                if (!isSupervisor) {
+                    accionesHtml = `<button onclick="toggleCliente(${cliente.id})" class="btn-accion ${botonClass}">
+                                        <i class="fas ${botonIcono}"></i> ${botonTexto}
+                                    </button>`;
+                } else {
+                    accionesHtml = `<span style="color: ${cliente.activo ? '#10b981' : '#ef4444'};">
+                                        <i class="fas ${cliente.activo ? 'fa-check-circle' : 'fa-times-circle'}"></i>
+                                        ${estado}
+                                    </span>`;
+                }
+
+                return `
+                     <tr>
+                         <td><span class="folio-badge">#${cliente.id}</span></td>
+                         <td>
+                            <span class="telegram-badge">
+                                <i class="fab fa-telegram"></i> ${cliente.id_telegram || '—'}
+                            </span>
+                         </td>
+                         <td><strong>${nombreCompleto || 'Sin nombre'}</strong></td>
+                         <td><span class="empresa-badge">${empresa}</span></td>
+                         <td><span class="badge-estado ${estadoClass}">${estado}</span></td>
+                         <td>${accionesHtml}</td>
+                     </tr>
+                `;
+            }).join('');
+        }
+
+        function actualizarEstadisticas(clientes) {
+            const total = clientes.length;
+            const activos = clientes.filter(c => c.activo).length;
+            const inactivos = total - activos;
+            const empresasSet = new Set(clientes.map(c => c.nombre_empresa).filter(Boolean));
+            document.getElementById('total-clientes').textContent = total;
+            document.getElementById('clientes-activos').textContent = activos;
+            document.getElementById('clientes-inactivos').textContent = inactivos;
+            document.getElementById('total-empresas-cliente').textContent = empresasSet.size;
+        }
+
+        function filtrarClientes() {
+            const filtroNombre = document.getElementById('filtro-nombre').value.toLowerCase();
+            const filtroEmpresa = document.getElementById('filtro-empresa').value.toLowerCase();
+            const filtroEstado = document.getElementById('filtro-estado-cliente').value;
+            const filtrados = clientesData.filter(cliente => {
+                const nombreCompleto = `${cliente.nombre || ''} ${cliente.primer_apellido || ''} ${cliente.segundo_apellido || ''}`.toLowerCase();
+                const empresa = (cliente.nombre_empresa || '').toLowerCase();
+                const estadoMatch = !filtroEstado || 
+                    (filtroEstado === 'activo' && cliente.activo) || 
+                    (filtroEstado === 'inactivo' && !cliente.activo);
+                return nombreCompleto.includes(filtroNombre) && empresa.includes(filtroEmpresa) && estadoMatch;
+            });
+            renderizarTablaClientes(filtrados);
+        }
+
+        async function toggleCliente(id) {
+            if (isSupervisor) {
+                mostrarNotificacion('No tiene permisos para realizar esta acción', 'error');
+                return;
+            }
+            if (!confirm('¿Estás seguro de cambiar el estado de este cliente?')) return;
+            try {
+                const response = await fetch(`${API_URL}/clientes/${id}/toggle-status`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const resultado = await response.json();
+                if (resultado.status === 'success') {
+                    mostrarNotificacion(resultado.message, 'success');
+                    await cargarClientesDesdeBD();
+                } else {
+                    throw new Error(resultado.message || 'Error al cambiar estado');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                mostrarNotificacion('Error al cambiar el estado del cliente', 'error');
+            }
+        }
+
+        function mostrarNotificacion(mensaje, tipo) {
+            let notificacion = document.getElementById('notificacion-toast');
+            if (!notificacion) {
+                notificacion = document.createElement('div');
+                notificacion.id = 'notificacion-toast';
+                notificacion.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 15px 25px;
+                    border-radius: 8px;
+                    color: white;
+                    font-weight: 600;
+                    z-index: 9999;
+                    display: none;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                `;
+                document.body.appendChild(notificacion);
+            }
+            notificacion.style.background = tipo === 'success' ? '#10b981' : '#ef4444';
+            notificacion.innerHTML = `<i class="fas ${tipo === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> ${mensaje}`;
+            notificacion.style.display = 'block';
+            setTimeout(() => notificacion.style.display = 'none', 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            mostrarInfoUsuario();
+            ajustarMenuPorRol();
+            document.getElementById('btn-logout').addEventListener('click', logout);
+            cargarClientesDesdeBD();
+            document.getElementById('filtro-nombre').addEventListener('input', filtrarClientes);
+            document.getElementById('filtro-empresa').addEventListener('input', filtrarClientes);
+            document.getElementById('filtro-estado-cliente').addEventListener('change', filtrarClientes);
+            document.getElementById('btn-refrescar-clientes').addEventListener('click', cargarClientesDesdeBD);
+        });
+    </script>
+</body>       
+</html>
