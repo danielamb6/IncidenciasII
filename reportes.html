@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reporte de Tickets - INSITRA</title>
-    
+    <link rel="icon" href="data:,">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/static/style.css">
+    
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -125,7 +126,7 @@
     <div class="top-bar">
         <div class="logo-container">
             <div class="logo-placeholder" id="logo-placeholder"><i class="fas fa-tools"></i></div>
-            <img src="logo sin fondo.png" alt="Logo INSITRA" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
+            <img src="/static/logo_sin_fondo.png" alt="Logo INSITRA" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
             <div class="logo-text">
                 <h1>INSITRA</h1>
                 <div class="subtitle">Sistema de Gestión de Incidencias</div>
@@ -150,7 +151,7 @@
             <ul class="menu">
                 <li class="menu-item" id="menu-dashboard"><a href="index.html" class="menu-link"><i class="fas fa-chart-line"></i><span>Dashboard</span></a></li>
                 <li class="menu-item" id="menu-crearticket"><a href="crear-ticket.html" class="menu-link"><i class="fas fa-plus-circle"></i><span>Crear Ticket</span></a></li>
-                <li class="menu-item" id="menu-registro"><a href="Registro_usuario.html" class="menu-link"><i class="fas fa-user-plus"></i><span>Registro Usuarios</span></a></li>
+                <li class="menu-item" id="menu-registro"><a href="registro_usuario.html" class="menu-link"><i class="fas fa-user-plus"></i><span>Registro Usuarios</span></a></li>
                 <li class="menu-item" id="menu-incidencias"><a href="incidencias.html" class="menu-link"><i class="fas fa-exclamation-circle"></i><span>Incidencias</span></a></li>
                 <li class="menu-item" id="menu-reportes"><a href="reportes.html" class="menu-link active"><i class="fas fa-chart-bar"></i><span>Reportes</span></a></li>
                 <li class="menu-item" id="menu-clientes"><a href="clientes.html" class="menu-link"><i class="fas fa-user-tie"></i><span>Clientes</span></a></li>
@@ -232,7 +233,7 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:5000';
+        const API_BASE = '';
         let isSupervisor = false;
 
         function logout() { localStorage.clear(); window.location.href = "login.html"; }
