@@ -12,7 +12,7 @@
     </script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="static/style.css">
     
     <style>
         /* Estilos específicos para incidencias */
@@ -190,7 +190,7 @@
             <div class="logo-placeholder" id="logo-placeholder">
                 <i class="fas fa-tools"></i>
             </div>
-            <img src="logo sin fondo.png" alt="Logo del Sistema" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
+            <img src="/static/logo_sin_fondo.png" alt="Logo del Sistema" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
             <div class="logo-text">
                 <h1>Sistema de <span>Incidencias</span></h1>
                 <div class="subtitle">Panel de Administración</div>
@@ -352,9 +352,9 @@
     </div>
 
     <script>
-        const API_URL = "http://localhost:5000/api";
-        let datosIncidencias = [];
-        let userRole = null; // Variable para almacenar el rol del usuario
+        var  API_URL = "/api";
+        var datosIncidencias = [];
+        var userRole = null; // Variable para almacenar el rol del usuario
 
         function mostrarInfoUsuario() {
             const sesion = JSON.parse(localStorage.getItem('sesion') || '{}');
@@ -574,22 +574,26 @@
                 tr.appendChild(tdFecha);
 
                 const tdEvidencia = document.createElement('td');
-                if (inc.evidencia_url) {
-                    const img = document.createElement('img');
-                    img.src = inc.evidencia_url;
-                    img.className = 'evidencia-thumb';
-                    img.onclick = () => abrirModalImagen(inc.evidencia_url);
-                    tdEvidencia.appendChild(img);
-                } else {
-                    tdEvidencia.innerHTML = '<div class="sin-evidencia"><i class="fas fa-image"></i></div>';
-                }
-                tr.appendChild(tdEvidencia);
+// Validamos que exista y que no sea la palabra "None" o "null"
+                   if (inc.evidencia_url && inc.evidencia_url !== 'None' && inc.evidencia_url !== 'null' && inc.evidencia_url.trim() !== '') {
+                 const img = document.createElement('img');
+                        img.src = inc.evidencia_url;
+                        img.className = 'evidencia-thumb';
+                            img.onclick = () => abrirModalImagen(inc.evidencia_url);
+                         tdEvidencia.appendChild(img);
+                    } else {
+                        // Si no hay imagen válida, mostramos el icono gris
+                        tdEvidencia.innerHTML = '<div class="sin-evidencia"><i class="fas fa-image"></i></div>';
+                    }
+                    tr.appendChild(tdEvidencia);
 
-                tbody.appendChild(tr);
-            });
+                    // --- ¡AQUÍ FALTABA ESTO! ---
+                    tbody.appendChild(tr); 
+                }); 
         }
+        // ---------------------------
 
-        function actualizarEstadisticas(incidencias) {
+         function actualizarEstadisticas(incidencias) {
             const total = incidencias.length;
             const pendientes = incidencias.filter(i => {
                 const est = i.estado || '';
@@ -605,44 +609,54 @@
         }
 
         function filtrarTabla() {
-            const fInicio = document.getElementById('filtro-fecha-inicio').value;
-            const fFin = document.getElementById('filtro-fecha-fin').value;
-            const filtroEmpresa = document.getElementById('filtro-empresa').value.toLowerCase();
-            const filtroTecnico = document.getElementById('filtro-tecnico').value.toLowerCase();
-            const filtroEstado = document.getElementById('filtro-estado').value;
-            
-            const filtradas = datosIncidencias.filter(inc => {
-                // 1. Filtro por Fecha
-                // 1. Filtro por Fecha
-                // ✅ DESPUÉS:
-                // 1. Filtro por Fecha (Alineado directo a la base de datos)
-                let pasaFiltroFecha = true;
-                if (fInicio || fFin) {
-                    if (!inc.fecha_pura) {
-                        pasaFiltroFecha = false;
-                    } else {
-                        if (fInicio && inc.fecha_pura < fInicio) pasaFiltroFecha = false;
-                        if (fFin && inc.fecha_pura > fFin) pasaFiltroFecha = false;
-                    }
-                }
-                // 2. Otros filtros
-                const empresa = (inc.empresa_nombre || '').toLowerCase();
-                const tecnico = (inc.tecnico || '').toLowerCase();
+    const fInicio = document.getElementById('filtro-fecha-inicio').value;
+    const fFin = document.getElementById('filtro-fecha-fin').value;
+    const filtroEmpresa = document.getElementById('filtro-empresa').value.toLowerCase();
+    const filtroTecnico = document.getElementById('filtro-tecnico').value.toLowerCase();
+    const filtroEstado = document.getElementById('filtro-estado').value;
+    
+    const filtradas = datosIncidencias.filter(inc => {
+        // 1. Filtro por Fecha MEJORADO (Usando Objetos Date)
+        let pasaFiltroFecha = true; 
+        
+        if (fInicio || fFin) {
+            if (!inc.fecha_pura) {
+                pasaFiltroFecha = false; // Si no hay fecha en la BD, lo oculta
+            } else {
+                // Limpiamos espacios y forzamos la hora a mediodía para evitar 
+                // que el cambio de zona horaria del navegador salte al día anterior
+                const fechaTicket = new Date(inc.fecha_pura.trim() + 'T12:00:00');
                 
-                let estadoActual = inc.estado || '';
-                if(estadoActual === 'EN ATENCION' || estadoActual === 'EN ATENCIÓN') estadoActual = 'EN PROCESO';
-                if(estadoActual === 'ESPERA_REFACCION') estadoActual = 'ESPERA REFACCION';
-
-                const pasaEmpresa = empresa.includes(filtroEmpresa);
-                const pasaTecnico = tecnico.includes(filtroTecnico);
-                const pasaEstado = !filtroEstado || estadoActual === filtroEstado;
-
-                return pasaFiltroFecha && pasaEmpresa && pasaTecnico && pasaEstado;
-            });
-            
-            actualizarEstadisticas(filtradas);
-            renderizarTablaIncidencias(filtradas);
+                if (fInicio) {
+                    const dateInicio = new Date(fInicio + 'T00:00:00');
+                    if (fechaTicket < dateInicio) pasaFiltroFecha = false;
+                }
+                
+                if (fFin) {
+                    const dateFin = new Date(fFin + 'T23:59:59');
+                    if (fechaTicket > dateFin) pasaFiltroFecha = false;
+                }
+            }
         }
+        
+        // 2. Otros filtros
+        const empresa = (inc.empresa_nombre || '').toLowerCase();
+        const tecnico = (inc.tecnico || '').toLowerCase();
+        
+        let estadoActual = inc.estado || '';
+        if(estadoActual === 'EN ATENCION' || estadoActual === 'EN ATENCIÓN') estadoActual = 'EN PROCESO';
+        if(estadoActual === 'ESPERA_REFACCION') estadoActual = 'ESPERA REFACCION';
+
+        const pasaEmpresa = empresa.includes(filtroEmpresa);
+        const pasaTecnico = tecnico.includes(filtroTecnico);
+        const pasaEstado = !filtroEstado || estadoActual === filtroEstado;
+
+        return pasaFiltroFecha && pasaEmpresa && pasaTecnico && pasaEstado;
+    });
+    
+    actualizarEstadisticas(filtradas);
+    renderizarTablaIncidencias(filtradas);
+}
 
         function abrirModalImagen(url) {
             document.getElementById('imagen-ampliada').src = url;
