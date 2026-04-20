@@ -12,8 +12,8 @@
     </script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="data:,">
     <style>
         /* ===== ESTILOS PROFESIONALES PARA CATÁLOGOS ===== */
         :root {
@@ -579,7 +579,7 @@
     <div class="top-bar">
         <div class="logo-container">
             <div class="logo-placeholder" id="logo-placeholder"><i class="fas fa-tools"></i></div>
-            <img src="logo sin fondo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'">            
+            <img src="/static/logo_sin_fondo.png" alt="Logo" class="logo-img" onerror="this.style.display='none'">            
             <div class="logo-text">
                 <h1>Sistema de <span>Incidencias</span></h1>
                 <div class="subtitle">Gestión de Catálogos</div>
@@ -840,11 +840,11 @@
     </div>
 
     <script>
-        const API_URL = "http://localhost:5000/api";
-        let equipoSeleccionadoId = null;
-        let vistaActual = 'equipos';
-        let tablaActualGlobal = "";
-        let isSupervisor = false;  // Control de permisos
+        var API_URL = "/api";
+        var equipoSeleccionadoId = null;
+        var vistaActual = 'equipos';
+        var tablaActualGlobal = "";
+        var isSupervisor = false;  // Control de permisos
 
         // ========== FUNCIONES COMUNES ==========
         function mostrarInfoUsuario() {
