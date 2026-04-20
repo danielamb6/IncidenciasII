@@ -12,8 +12,8 @@
     </script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
-    
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" href="data:,"> 
     <style>
         .filtros-clientes {
             display: flex;
@@ -133,7 +133,7 @@
             <div class="logo-placeholder" id="logo-placeholder">
                 <i class="fas fa-tools"></i>
             </div>
-            <img src="logo sin fondo.png" alt="Logo" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
+            <img src="/static/logo_sin_fondo.png" alt="Logo" class="logo-img" onerror="document.getElementById('logo-placeholder').style.display='flex'; this.style.display='none'">            
             <div class="logo-text">
                 <h1>Sistema de <span>Incidencias</span></h1>
                 <div class="subtitle">Gestión de Clientes</div>
@@ -283,7 +283,7 @@
     </div>
 
     <script>
-        const API_URL = "http://localhost:5000/api";
+        const API_URL = "/api";
         let clientesData = [];
         let isSupervisor = false;  // Control de permisos
 
